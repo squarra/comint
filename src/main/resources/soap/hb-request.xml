@@ -1,0 +1,20 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+               xmlns:uicm="http://uic.cc.org/UICMessage"
+               xmlns:uicmh="http://uic.cc.org/UICMessage/Header">
+    <soap:Body>
+        <uicm:UICHBMessage>
+            <message>Are you alive?</message>
+            <properties>
+                <org.uic.cc.esb.message.rli.instance.no>101</org.uic.cc.esb.message.rli.instance.no>
+                <org.uic.cc.esb.message.li.host>10.10.207.213</org.uic.cc.esb.message.li.host>
+                <org.uic.cc.esb.message.li.instance.no>01</org.uic.cc.esb.message.li.instance.no>
+                <org.uic.cc.esb.message.lili.transport.mode>WEBSERVICE</org.uic.cc.esb.message.lili.transport.mode>
+                <org.uic.cc.esb.message.li.name>TESTLI</org.uic.cc.esb.message.li.name>
+                <org.uic.cc.esb.message.rli.ip>10.10.207.64</org.uic.cc.esb.message.rli.ip>
+                <org.uic.cc.esb.message.rli.port>8080</org.uic.cc.esb.message.rli.port>
+                <org.uic.cc.esb.message.rli.name>TEST_REMOTE_LI</org.uic.cc.esb.message.rli.name>
+            </properties>
+        </uicm:UICHBMessage>
+    </soap:Body>
+</soap:Envelope>

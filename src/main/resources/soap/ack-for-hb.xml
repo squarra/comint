@@ -1,0 +1,10 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+               xmlns:uicm="http://uic.cc.org/UICMessage"
+               xmlns:uicmh="http://uic.cc.org/UICMessage/Header">
+    <soap:Body>
+        <uicmr:UICHBMessageResponse xmlns:uicmr="http://uic.cc.org/UICMessage">
+            <return>HEART_BEAT_WS_RECEIVED</return>
+        </uicmr:UICHBMessageResponse>
+    </soap:Body>
+</soap:Envelope>
