@@ -154,7 +154,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <packageName>org.example</packageName>
+                    <packageName>org.example.messaging.ack</packageName>
                 </configuration>
             </plugin>
         </plugins>

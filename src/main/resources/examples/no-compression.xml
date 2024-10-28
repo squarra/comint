@@ -1,0 +1,119 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:uicm="http://uic.cc.org/UICMessage">
+    <soap:Header>
+        <uicmh:signed xmlns:uicmh="http://uic.cc.org/UICMessage/Header">false</uicmh:signed>
+        <uicmh:encrypted xmlns:uicmh="http://uic.cc.org/UICMessage/Header">false</uicmh:encrypted>
+        <uicmh:compressed xmlns:uicmh="http://uic.cc.org/UICMessage/Header">false</uicmh:compressed>
+        <uicmh:messageIdentifier xmlns:uicmh="http://uic.cc.org/UICMessage/Header">796cc4ee-cd51-49c2-a8cf-3bd73b29ddfa</uicmh:messageIdentifier>
+        <uicmh:messageLiHost xmlns:uicmh="http://uic.cc.org/UICMessage/Header">122.109.101.100</uicmh:messageLiHost>
+    </soap:Header>
+    <soap:Body>
+        <uicm:UICMessage>
+            <message>
+                <TrainCompositionMessage>
+                    <MessageHeader>
+                        <MessageReference>
+                            <MessageType>2201</MessageType>
+                            <MessageTypeVersion>5.1.8</MessageTypeVersion>
+                            <MessageIdentifier>796cc4ee-cd51-49c2-a8cf-3bd73b29ddfa</MessageIdentifier>
+                            <MessageDateTime>2011-12-08T14:25:30.910+05:30</MessageDateTime>
+                        </MessageReference>
+                        <Sender CI_InstanceNumber="">3025</Sender>
+                        <Recipient CI_InstanceNumber="">0074</Recipient>
+                    </MessageHeader>
+                    <PathIdentity>
+                        <PathIdent>48119</PathIdent>
+                        <PathDeparturePoint>
+                            <CountryCodeISO/>
+                            <LocationPrimaryCode/>
+                            <PrimaryLocationName/>
+                            <LocationSubsidiaryCode LocationSubsidiaryTypeCode=""/>
+                        </PathDeparturePoint>
+                        <PathDepartureTime>2011-04-11T20:05:00+02:00</PathDepartureTime>
+                        <PathDestinationPoint>
+                            <CountryCodeISO/>
+                            <LocationPrimaryCode/>
+                            <PrimaryLocationName/>
+                            <LocationSubsidiaryCode LocationSubsidiaryTypeCode=""/>
+                        </PathDestinationPoint>
+                        <PathDestinationTime/>
+                        <TrainNumber>
+                            <PathIdent>48119</PathIdent>
+                            <ScheduledDepartureDateTime>2011-04-11T20:05:00+02:00</ScheduledDepartureDateTime>
+                            <PathDepartureLocation>
+                                <CountryCodeISO/>
+                                <LocationPrimaryCode/>
+                                <PrimaryLocationName/>
+                                <LocationSubsidiaryCode LocationSubsidiaryTypeCode=""/>
+                            </PathDepartureLocation>
+                        </TrainNumber>
+                    </PathIdentity>
+                    <TrainCompositionJourneySection>
+                        <JourneySection>
+                            <IntermediateDestination>
+                                <CountryCodeISO/>
+                                <LocationPrimaryCode/>
+                                <LocationSubsidiaryCode LocationSubsidiaryTypeCode=""/>
+                            </IntermediateDestination>
+                            <IntermediateArrivalTime>2011-04-12T04:30:00+02:00</IntermediateArrivalTime>
+                            <IntermediateDepartureTime/>
+                            <ResponsibilityActualSection>
+                                <ResponsibleRU>0083</ResponsibleRU>
+                                <ResponsibleIM/>
+                            </ResponsibilityActualSection>
+                            <ResponsibilityNextSection>
+                                <ResponsibleRU>IT</ResponsibleRU>
+                                <ResponsibleIM/>
+                            </ResponsibilityNextSection>
+                        </JourneySection>
+                        <LocoIdent>
+                            <TractionType/>
+                            <TractionIdent/>
+                            <TractionMode/>
+                        </LocoIdent>
+                        <TrainRunningData>
+                            <TrainRunningTechData>
+                                <TrainWeight>461900</TrainWeight>
+                                <TrainLength>452</TrainLength>
+                                <LocoIdent>
+                                    <TractionType/>
+                                    <TractionIdent/>
+                                    <TractionMode/>
+                                </LocoIdent>
+                                <TrainCC_System/>
+                                <TrainRadioSystem/>
+                                <TrainMaxSpeed/>
+                                <MaxAxleWeight>9.366666666666665</MaxAxleWeight>
+                                <BrakeType/>
+                                <BrakeWeight/>
+                            </TrainRunningTechData>
+                        </TrainRunningData>
+                        <LivestockIndicator/>
+                        <TrainWagonOrder>
+                            <WagonNumberFreight>238742727825</WagonNumberFreight>
+                            <WagonTrainPosition>1</WagonTrainPosition>
+                        </TrainWagonOrder>
+                        <WagonData>
+                            <WagonNumberFreight>238742727825</WagonNumberFreight>
+                            <WagonTechData>
+                                <WagonLength>2650</WagonLength>
+                                <WagonNumberOfAxles>3</WagonNumberOfAxles>
+                                <BrakeType>3</BrakeType>
+                                <BrakeWeight>28</BrakeWeight>
+                                <WagonMaxSpeed>100</WagonMaxSpeed>
+                                <MaxAxleWeight>9.366666666666665</MaxAxleWeight>
+                                <WagonWeightEmpty>26700</WagonWeightEmpty>
+                            </WagonTechData>
+                            <ActivityType/>
+                            <ExceptionalGaugingInd/>
+                            <TotalLoadWeight/>
+                        </WagonData>
+                        <ActivityType/>
+                        <ExceptionalGaugingInd/>
+                        <TotalLoadWeight/>
+                    </TrainCompositionJourneySection>
+                </TrainCompositionMessage>
+            </message>
+            <encoding>UTF-8</encoding>
+        </uicm:UICMessage>
+    </soap:Body>
+</soap:Envelope>
