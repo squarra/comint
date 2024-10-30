@@ -1,8 +1,8 @@
 package org.example;
 
+import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.jboss.logging.Logger;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
@@ -20,14 +20,12 @@ import java.util.stream.Stream;
 @ApplicationScoped
 public class XmlSchemaProvider {
 
-    private static final Logger LOG = Logger.getLogger(XmlSchemaProvider.class);
-
     private final Map<String, Schema> version2Schema = new HashMap<>();
     private static final String SCHEMA_DIRECTORY = "src/main/resources/schemas";
 
     @PostConstruct
     void init() {
-        LOG.info("***** Loading XSD files *****");
+        Log.info("***** Loading XSD files *****");
         loadSchemas();
     }
 

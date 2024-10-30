@@ -9,13 +9,6 @@ import java.util.List;
 
 public class XmlUtils {
 
-    public static void printNodeList(NodeList nodeList) {
-        for (int i = 0; i < nodeList.getLength(); i++) {
-            Node node = nodeList.item(i);
-            System.out.println(node.getNodeName() + ": " + node.getNodeValue());
-        }
-    }
-
     public static List<Element> getElementChildNodes(Node node) {
         List<Element> result = new ArrayList<>();
         NodeList nodeList = node.getChildNodes();

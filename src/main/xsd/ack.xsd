@@ -98,9 +98,8 @@
         <xs:annotation>
             <xs:documentation>Identifies the company which is sending/receiving the messages</xs:documentation>
         </xs:annotation>
-        <xs:restriction base="Numeric4-4">
-            <xs:minInclusive value="0001"/>
-            <xs:maxInclusive value="9999"/>
+        <xs:restriction base="String4-4">
+            <xs:pattern value=" [0-9A-Z]{4}"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:element name="RemoteLIName" type="FreeText">
@@ -135,6 +134,12 @@
         <xs:restriction base="xs:integer">
             <xs:minInclusive value="0001"/>
             <xs:maxInclusive value="9999"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="String4-4">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="4"/>
+            <xs:maxLength value="4"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:element name="MessageTransportMechanism">
