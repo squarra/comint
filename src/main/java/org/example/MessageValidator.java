@@ -16,7 +16,7 @@ import java.util.Optional;
 public class MessageValidator {
 
     @Inject
-    MessageExtractor messageExtractor;
+    MessageHeaderExtractor messageHeaderExtractor;
     @Inject
     XmlSchemaProvider xmlSchemaProvider;
 
@@ -42,13 +42,13 @@ public class MessageValidator {
         }
 
         Node tafTapTsiMessage = elementChildNodes.getFirst();
-        String tafTapTsiMessageIdentifier = messageExtractor.extractMessageIdentifier(tafTapTsiMessage);
+        String tafTapTsiMessageIdentifier = messageHeaderExtractor.extractMessageIdentifier(tafTapTsiMessage);
         if (!tafTapTsiMessageIdentifier.equals(messageIdentifier)) {
             throw new SchemaValidationException("MessageIdentifier in Soap Header (" + messageIdentifier
                     + ") and TafTapTsi MessageHeader (" + tafTapTsiMessageIdentifier + ") do not match");
         }
 
-        String messageTypeVersion = messageExtractor.extractMessageTypeVersion(tafTapTsiMessage);
+        String messageTypeVersion = messageHeaderExtractor.extractMessageTypeVersion(tafTapTsiMessage);
         Optional<Schema> schema = xmlSchemaProvider.getSchema(messageTypeVersion);
         if (schema.isEmpty()) {
             throw new SchemaValidationException("No schema found for version " + messageTypeVersion);

@@ -18,7 +18,7 @@ public class LITechnicalAckBuilder {
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
 
     @Inject
-    MessageExtractor messageExtractor;
+    MessageHeaderExtractor messageHeaderExtractor;
 
     @ConfigProperty(name = "comint.remote-li-name", defaultValue = "LIName")
     String remoteLIName;
@@ -30,8 +30,8 @@ public class LITechnicalAckBuilder {
         liTechnicalAck.setAckIndentifier("ACKID" + messageIdentifier);
         liTechnicalAck.setResponseStatus("ACK");
         liTechnicalAck.setMessageReference(createMessageReference(message));
-        liTechnicalAck.setSender(messageExtractor.extractSender(message));
-        liTechnicalAck.setRecipient(messageExtractor.extractRecipient(message));
+        liTechnicalAck.setSender(messageHeaderExtractor.extractSender(message));
+        liTechnicalAck.setRecipient(messageHeaderExtractor.extractRecipient(message));
         liTechnicalAck.setRemoteLIName(remoteLIName);
         liTechnicalAck.setRemoteLIInstanceNumber(remoteLIInstanceNumber);
         liTechnicalAck.setMessageTransportMechanism("WEBSERVICE");
@@ -40,10 +40,10 @@ public class LITechnicalAckBuilder {
 
     private MessageReference createMessageReference(Node message) {
         MessageReference messageReference = OBJECT_FACTORY.createMessageReference();
-        messageReference.setMessageType(messageExtractor.extractMessageType(message));
-        messageReference.setMessageTypeVersion(messageExtractor.extractMessageTypeVersion(message));
-        messageReference.setMessageIdentifier(messageExtractor.extractMessageIdentifier(message));
-        messageReference.setMessageDateTime(createMessageDateTime(messageExtractor.extractMessageDateTime(message)));
+        messageReference.setMessageType(messageHeaderExtractor.extractMessageType(message));
+        messageReference.setMessageTypeVersion(messageHeaderExtractor.extractMessageTypeVersion(message));
+        messageReference.setMessageIdentifier(messageHeaderExtractor.extractMessageIdentifier(message));
+        messageReference.setMessageDateTime(createMessageDateTime(messageHeaderExtractor.extractMessageDateTime(message)));
         return messageReference;
     }
 

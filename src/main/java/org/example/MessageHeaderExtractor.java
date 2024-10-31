@@ -9,8 +9,13 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+/**
+ * Extracts message header fields from XML payloads.
+ * All methods return null if the field cannot be extracted or is empty.
+ * Null-check the return values if working with unvalidated XML documents.
+ */
 @ApplicationScoped
-public class MessageExtractor {
+public class MessageHeaderExtractor {
 
     private static final String MESSAGE_HEADER_RELATIVE = "//*[local-name()='MessageHeader']";
     private static final String MESSAGE_REFERENCE = "/*[local-name()='MessageReference']";
@@ -22,7 +27,7 @@ public class MessageExtractor {
     private static final String RECIPIENT = "/*[local-name()='Recipient']";
     private static final String MESSAGE_ROUTING_ID = "/*[local-name()='MessageRoutingID']";
 
-    private final XPath xPath = XPathFactory.newInstance().newXPath();
+    private static final XPath XPATH = XPathFactory.newInstance().newXPath();
 
     public String extractMessageType(Object payload) {
         String expression = MESSAGE_HEADER_RELATIVE + MESSAGE_REFERENCE + MESSAGE_TYPE;
@@ -74,12 +79,12 @@ public class MessageExtractor {
         }
 
         try {
-            String value = (String) xPath.evaluate(expression + "/text()", node, XPathConstants.STRING);
-            if (value.isEmpty()) {
+            String value = (String) XPATH.evaluate(expression + "/text()", node, XPathConstants.STRING);
+            if (value.isBlank()) {
                 Log.debugf("No {} found in XML payload", fieldName);
                 return null;
             }
-            return value;
+            return value.trim();
         } catch (XPathExpressionException e) {
             Log.warnf("Error extracting {} from XML payload: {}", fieldName, e.getMessage());
             return null;

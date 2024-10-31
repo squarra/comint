@@ -41,7 +41,6 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkiverse.cxf</groupId>
             <artifactId>quarkus-cxf</artifactId>
