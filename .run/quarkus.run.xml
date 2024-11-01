@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="comint" type="QuarkusRunConfigurationType" factoryName="Quarkus">
+  <configuration default="false" name="quarkus" type="QuarkusRunConfigurationType" factoryName="Quarkus">
     <module name="quarkus" />
     <QsMavenRunConfiguration>
       <MavenSettings>
