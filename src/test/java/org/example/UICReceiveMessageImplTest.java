@@ -2,6 +2,7 @@ package org.example;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.nio.file.Paths;
 
 import static io.restassured.RestAssured.given;
 
+@Tag("requires-rabbitmq")
 @QuarkusTest
 class UICReceiveMessageImplTest {
 
@@ -29,5 +31,4 @@ class UICReceiveMessageImplTest {
                 .then()
                 .statusCode(200);
     }
-
 }
