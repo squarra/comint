@@ -9,8 +9,10 @@ import java.util.ResourceBundle;
 
 @ApplicationScoped
 public class Messages {
+
     private static final String BUNDLE_NAME = "messages";
     private final ResourceBundle bundle;
+
 
     @Inject
     public Messages(@ConfigProperty(name = "app.locale", defaultValue = "en") String locale) {

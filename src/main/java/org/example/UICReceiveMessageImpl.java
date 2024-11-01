@@ -24,12 +24,20 @@ public class UICReceiveMessageImpl implements UICReceiveMessage {
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
     private static final String ORIGIN = "ORIGIN";
 
+    private final LITechnicalAckBuilder liTechnicalAckBuilder;
+    private final MessageValidator messageValidator;
+    private final RabbitMQService rabbitMQService;
+
     @Inject
-    LITechnicalAckBuilder liTechnicalAckBuilder;
-    @Inject
-    MessageValidator messageValidator;
-    @Inject
-    RabbitMQService rabbitMQService;
+    public UICReceiveMessageImpl(
+            LITechnicalAckBuilder liTechnicalAckBuilder,
+            MessageValidator messageValidator,
+            RabbitMQService rabbitMQService
+    ) {
+        this.liTechnicalAckBuilder = liTechnicalAckBuilder;
+        this.messageValidator = messageValidator;
+        this.rabbitMQService = rabbitMQService;
+    }
 
     @Override
     public UICMessageResponse uicMessage(UICMessage parameters, String messageIdentifier, String messageLiHost, boolean compressed, boolean encrypted, boolean signed) {

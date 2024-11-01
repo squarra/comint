@@ -14,8 +14,8 @@ import java.util.Optional;
 
 @ApplicationScoped
 public class MessageValidator {
-    private final MessageHeaderExtractor messageHeaderExtractor;
 
+    private final MessageHeaderExtractor messageHeaderExtractor;
     private final Messages messages;
     private final XmlSchemaService xmlSchemaService;
 

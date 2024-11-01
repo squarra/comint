@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 public class XmlSchemaService {
 
     private static final String SCHEMA_DIRECTORY = "schemas/";
+
     private final Map<String, Schema> version2Schema = new HashMap<>();
 
     void onStart(@Observes StartupEvent event) {

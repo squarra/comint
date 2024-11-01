@@ -17,13 +17,20 @@ public class LITechnicalAckBuilder {
 
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
 
-    @Inject
-    MessageHeaderExtractor messageHeaderExtractor;
+    private final MessageHeaderExtractor messageHeaderExtractor;
+    private final String remoteLIName;
+    private final int remoteLIInstanceNumber;
 
-    @ConfigProperty(name = "comint.remote-li-name", defaultValue = "LIName")
-    String remoteLIName;
-    @ConfigProperty(name = "comint.remote-li-instance-number", defaultValue = "19")
-    int remoteLIInstanceNumber;
+    @Inject
+    public LITechnicalAckBuilder(
+            MessageHeaderExtractor messageHeaderExtractor,
+            @ConfigProperty(name = "comint.remote-li-name", defaultValue = "LIName") String remoteLIName,
+            @ConfigProperty(name = "comint.remote-li-instance-number", defaultValue = "19") int remoteLIInstanceNumber
+    ) {
+        this.messageHeaderExtractor = messageHeaderExtractor;
+        this.remoteLIName = remoteLIName;
+        this.remoteLIInstanceNumber = remoteLIInstanceNumber;
+    }
 
     public LITechnicalAck build(Node message, String messageIdentifier) {
         LITechnicalAck liTechnicalAck = OBJECT_FACTORY.createLITechnicalAck();
