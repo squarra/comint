@@ -20,7 +20,7 @@ public class MessageValidator {
     @Inject
     XmlSchemaProvider xmlSchemaProvider;
 
-    public Node validateMessage(Object message, String messageIdentifier) throws SchemaValidationException {
+    public Element validateMessage(Object message, String messageIdentifier) throws SchemaValidationException {
 
         if (!(message instanceof Node node)) {
             throw new SchemaValidationException("The message is not an XML node");
@@ -35,20 +35,27 @@ public class MessageValidator {
             throw new SchemaValidationException("The message is not an element node with name \"message\"");
         }
 
-        List<Element> elementChildNodes = XmlUtils.getElementChildNodes(node);
+        List<Element> elementChildNodes = XmlUtils.getElementChildNodes(element);
         if (elementChildNodes.size() != 1) {
             throw new SchemaValidationException(
                     "The number of XML element child nodes of the message was " + elementChildNodes.size() + " (1 expected)");
         }
 
-        Node tafTapTsiMessage = elementChildNodes.getFirst();
+        Element tafTapTsiMessage = elementChildNodes.getFirst();
         String tafTapTsiMessageIdentifier = messageHeaderExtractor.extractMessageIdentifier(tafTapTsiMessage);
+        if (tafTapTsiMessageIdentifier == null) {
+            throw new SchemaValidationException("MessageIdentifier in TafTapTsi MessageHeader is missing");
+        }
+
         if (!tafTapTsiMessageIdentifier.equals(messageIdentifier)) {
             throw new SchemaValidationException("MessageIdentifier in Soap Header (" + messageIdentifier
                     + ") and TafTapTsi MessageHeader (" + tafTapTsiMessageIdentifier + ") do not match");
         }
 
         String messageTypeVersion = messageHeaderExtractor.extractMessageTypeVersion(tafTapTsiMessage);
+        if (messageTypeVersion == null) {
+            throw new SchemaValidationException("MessageTypeVersion in TafTapTsi MessageHeader is missing");
+        }
         Optional<Schema> schema = xmlSchemaProvider.getSchema(messageTypeVersion);
         if (schema.isEmpty()) {
             throw new SchemaValidationException("No schema found for version " + messageTypeVersion);

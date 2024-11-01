@@ -27,6 +27,7 @@ public class XmlSchemaProvider {
     void init() {
         Log.info("***** Loading XSD files *****");
         loadSchemas();
+        Log.infof("Found schema for versions: %s", version2Schema.keySet());
     }
 
     private void loadSchemas() {
@@ -39,7 +40,7 @@ public class XmlSchemaProvider {
                         .forEach(path -> loadSchema(path, schemaFactory));
             }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load XSD schemas", e);
+            throw new RuntimeException(e.getMessage());
         }
     }
 

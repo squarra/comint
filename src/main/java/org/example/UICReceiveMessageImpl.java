@@ -1,5 +1,6 @@
 package org.example;
 
+import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.jws.WebService;
 import jakarta.xml.bind.JAXBContext;
@@ -11,7 +12,7 @@ import org.example.messaging.UICMessageResponse;
 import org.example.messaging.UICReceiveMessage;
 import org.example.messaging.ack.LITechnicalAck;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
+import org.w3c.dom.Element;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -20,32 +21,32 @@ import javax.xml.parsers.ParserConfigurationException;
 @WebService(endpointInterface = "org.example.messaging.UICReceiveMessage")
 public class UICReceiveMessageImpl implements UICReceiveMessage {
 
+    private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
+    private static final String ORIGIN = "ORIGIN";
+
+    @Inject
+    LITechnicalAckBuilder liTechnicalAckBuilder;
     @Inject
     MessageValidator messageValidator;
     @Inject
-    LITechnicalAckBuilder liTechnicalAckBuilder;
-
-    private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
+    RabbitMQService rabbitMQService;
 
     @Override
     public UICMessageResponse uicMessage(UICMessage parameters, String messageIdentifier, String messageLiHost, boolean compressed, boolean encrypted, boolean signed) {
-        Object message = parameters.getMessage();
+        Element message = validateMessageOrThrow(parameters.getMessage(), messageIdentifier);
+        boolean messageSentSuccessfully = rabbitMQService.sendMessageToAcceptQueue(message, messageIdentifier, ORIGIN);
+        LITechnicalAck liTechnicalAck = liTechnicalAckBuilder.build(message, messageIdentifier);
+        if (!messageSentSuccessfully) {
+            liTechnicalAck.setResponseStatus("NACK");
+        }
+        return createUICMessageResponse(liTechnicalAck);
+    }
 
-        if (compressed) {
-            throw new RuntimeException("No support for compression yet");
-        }
-        if (encrypted) {
-            throw new RuntimeException("No support for encryption yet");
-        }
-        if (signed) {
-            throw new RuntimeException("No support for signing yet");
-        }
-
+    private Element validateMessageOrThrow(Object message, String messageIdentifier) {
         try {
-            Node node = messageValidator.validateMessage(message, messageIdentifier);
-            LITechnicalAck liTechnicalAck = liTechnicalAckBuilder.build(node, messageIdentifier);
-            return createUICMessageResponse(liTechnicalAck);
+            return messageValidator.validateMessage(message, messageIdentifier);
         } catch (SchemaValidationException e) {
+            Log.warnf("[ %s ] Schema validation failed: %s", messageIdentifier, e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
