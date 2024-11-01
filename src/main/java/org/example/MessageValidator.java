@@ -14,51 +14,55 @@ import java.util.Optional;
 
 @ApplicationScoped
 public class MessageValidator {
+    private final MessageHeaderExtractor messageHeaderExtractor;
+
+    private final Messages messages;
+    private final XmlSchemaService xmlSchemaService;
 
     @Inject
-    MessageHeaderExtractor messageHeaderExtractor;
-    @Inject
-    XmlSchemaProvider xmlSchemaProvider;
+    public MessageValidator(MessageHeaderExtractor messageHeaderExtractor, Messages messages, XmlSchemaService xmlSchemaService) {
+        this.messageHeaderExtractor = messageHeaderExtractor;
+        this.messages = messages;
+        this.xmlSchemaService = xmlSchemaService;
+    }
 
     public Element validateMessage(Object message, String messageIdentifier) throws SchemaValidationException {
 
         if (!(message instanceof Node node)) {
-            throw new SchemaValidationException("The message is not an XML node");
+            throw new SchemaValidationException(messages.get(MessageKey.MESSAGE_NOT_NODE));
         }
 
         if (node.getNodeType() != Node.ELEMENT_NODE) {
-            throw new SchemaValidationException("The message is not an element node but of type " + node.getNodeType());
+            throw new SchemaValidationException(messages.get(MessageKey.MESSAGE_NOT_ELEMENT, node.getNodeType()));
         }
 
         Element element = (Element) node;
         if (!element.getTagName().equalsIgnoreCase("message")) {
-            throw new SchemaValidationException("The message is not an element node with name \"message\"");
+            throw new SchemaValidationException(messages.get(MessageKey.MESSAGE_WRONG_ROOT));
         }
 
         List<Element> elementChildNodes = XmlUtils.getElementChildNodes(element);
         if (elementChildNodes.size() != 1) {
-            throw new SchemaValidationException(
-                    "The number of XML element child nodes of the message was " + elementChildNodes.size() + " (1 expected)");
+            throw new SchemaValidationException(messages.get(MessageKey.MESSAGE_MULTIPLE_CHILDREN, elementChildNodes.size()));
         }
 
         Element tafTapTsiMessage = elementChildNodes.getFirst();
         String tafTapTsiMessageIdentifier = messageHeaderExtractor.extractMessageIdentifier(tafTapTsiMessage);
         if (tafTapTsiMessageIdentifier == null) {
-            throw new SchemaValidationException("MessageIdentifier in TafTapTsi MessageHeader is missing");
+            throw new SchemaValidationException(messages.get(MessageKey.MESSAGE_IDENTIFIER_MISSING));
         }
 
         if (!tafTapTsiMessageIdentifier.equals(messageIdentifier)) {
-            throw new SchemaValidationException("MessageIdentifier in Soap Header (" + messageIdentifier
-                    + ") and TafTapTsi MessageHeader (" + tafTapTsiMessageIdentifier + ") do not match");
+            throw new SchemaValidationException(messages.get(MessageKey.MESSAGE_IDENTIFIER_MISMATCH, messageIdentifier, tafTapTsiMessageIdentifier));
         }
 
         String messageTypeVersion = messageHeaderExtractor.extractMessageTypeVersion(tafTapTsiMessage);
         if (messageTypeVersion == null) {
-            throw new SchemaValidationException("MessageTypeVersion in TafTapTsi MessageHeader is missing");
+            throw new SchemaValidationException(messages.get(MessageKey.MESSAGE_TYPE_VERSION_MISSING));
         }
-        Optional<Schema> schema = xmlSchemaProvider.getSchema(messageTypeVersion);
+        Optional<Schema> schema = xmlSchemaService.getSchema(messageTypeVersion);
         if (schema.isEmpty()) {
-            throw new SchemaValidationException("No schema found for version " + messageTypeVersion);
+            throw new SchemaValidationException(messages.get(MessageKey.SCHEMA_NOT_FOUND, messageTypeVersion));
         }
 
         try {

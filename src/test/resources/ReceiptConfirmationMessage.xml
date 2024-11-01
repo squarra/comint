@@ -1,0 +1,32 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:head="http://uic.cc.org/UICMessage/Header" xmlns:uic="http://uic.cc.org/UICMessage">
+   <soapenv:Header>
+      <head:signed>false</head:signed>
+      <head:encrypted>false</head:encrypted>
+      <head:compressed>false</head:compressed>
+      <head:messageLiHost>122.109.101.100</head:messageLiHost>
+      <head:messageIdentifier>00000000-0000-0000-0000-000000000000</head:messageIdentifier>
+   </soapenv:Header>
+   <soapenv:Body>
+      <uic:UICMessage>
+         <message>
+            <ReceiptConfirmationMessage xmlns="http://www.era.europa.eu/schemes/TAFTSI/3.5">
+               <MessageHeader>
+                  <MessageReference>
+                     <MessageType>300</MessageType>
+                     <MessageTypeVersion>3.5.0.0</MessageTypeVersion>
+                     <MessageIdentifier>00000000-0000-0000-0000-000000000000</MessageIdentifier>
+                     <MessageDateTime>2000-01-01T00:00:00.00</MessageDateTime>
+                  </MessageReference>
+                  <Sender>0000</Sender>
+                  <Recipient>0000</Recipient>
+               </MessageHeader>
+               <RelatedReference>
+                  <RelatedType>2006</RelatedType>
+                  <RelatedIdentifier>a5423bb0-7e18-11ee-b850-005056b36a19</RelatedIdentifier>
+                  <RelatedMessageDateTime>2023-11-08T10:15:43Z</RelatedMessageDateTime>
+               </RelatedReference>
+            </ReceiptConfirmationMessage>
+         </message>
+      </uic:UICMessage>
+   </soapenv:Body>
+</soapenv:Envelope>

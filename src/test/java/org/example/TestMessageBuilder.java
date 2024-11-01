@@ -16,14 +16,13 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.StringWriter;
 
-public class MessageBuilder {
+public class TestMessageBuilder {
 
     private final Document document;
-    private Element rootElement;
-    private Element currentElement;
     private final String version;
     private final String namespace;
-
+    private Element rootElement;
+    private Element currentElement;
     private Element messageType;
     private Element messageTypeVersion;
     private Element messageIdentifier;
@@ -32,14 +31,18 @@ public class MessageBuilder {
     private Element recipient;
 
 
-    public MessageBuilder(String root, String version) throws ParserConfigurationException {
+    public TestMessageBuilder(String root, String version) {
         this.version = version;
         this.namespace = "http://www.era.europa.eu/schemes/TAFTSI/" + version.substring(0, 3);
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        document = builder.newDocument();
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            document = builder.newDocument();
+        } catch (ParserConfigurationException e) {
+            throw new RuntimeException(e);
+        }
 
         rootElement = document.createElementNS(namespace, root);
         document.appendChild(rootElement);
@@ -47,48 +50,48 @@ public class MessageBuilder {
         addDefaultMessageHeader();
     }
 
-    public MessageBuilder element(String name) {
+    public TestMessageBuilder element(String name) {
         Element element = createElement(name);
         currentElement.appendChild(element);
         currentElement = element;
         return this;
     }
 
-    public MessageBuilder text(String name, String value) {
+    public TestMessageBuilder text(String name, String value) {
         currentElement.appendChild(createTextElement(name, value));
         return this;
     }
 
-    public MessageBuilder attribute(String name, String value) {
+    public TestMessageBuilder attribute(String name, String value) {
         currentElement.setAttributeNS(namespace, name, value);
         return this;
     }
 
-    public MessageBuilder messageType(String value) {
+    public TestMessageBuilder messageType(String value) {
         return setElementText(messageType, value);
     }
 
-    public MessageBuilder messageTypeVersion(String value) {
+    public TestMessageBuilder messageTypeVersion(String value) {
         return setElementText(messageTypeVersion, value);
     }
 
-    public MessageBuilder messageIdentifier(String value) {
+    public TestMessageBuilder messageIdentifier(String value) {
         return setElementText(messageIdentifier, value);
     }
 
-    public MessageBuilder messageDateTime(String value) {
+    public TestMessageBuilder messageDateTime(String value) {
         return setElementText(messageDateTime, value);
     }
 
-    public MessageBuilder sender(String value) {
+    public TestMessageBuilder sender(String value) {
         return setElementText(sender, value);
     }
 
-    public MessageBuilder recipient(String value) {
+    public TestMessageBuilder recipient(String value) {
         return setElementText(recipient, value);
     }
 
-    public MessageBuilder up() {
+    public TestMessageBuilder up() {
         Node parent = currentElement.getParentNode();
         if (parent instanceof Element) {
             currentElement = (Element) parent;
@@ -96,7 +99,7 @@ public class MessageBuilder {
         return this;
     }
 
-    public MessageBuilder navigateToElement(String name) {
+    public TestMessageBuilder navigateToElement(String name) {
         NodeList nodeList = document.getElementsByTagNameNS(namespace, name);
         if (nodeList.getLength() > 0) {
             currentElement = (Element) nodeList.item(0);
@@ -104,7 +107,7 @@ public class MessageBuilder {
         return this;
     }
 
-    public MessageBuilder remove() {
+    public TestMessageBuilder remove() {
         if (currentElement != rootElement) {
             Node parent = currentElement.getParentNode();
             parent.removeChild(currentElement);
@@ -113,7 +116,7 @@ public class MessageBuilder {
         return this;
     }
 
-    public MessageBuilder rename(String newName) {
+    public TestMessageBuilder rename(String newName) {
         Element newElement = document.createElementNS(namespace, newName);
         while (currentElement.hasChildNodes()) {
             newElement.appendChild(currentElement.getFirstChild());
@@ -124,7 +127,7 @@ public class MessageBuilder {
         return this;
     }
 
-    public MessageBuilder wrap(String name) {
+    public TestMessageBuilder wrap(String name) {
         Element element = document.createElement(name);
         document.removeChild(rootElement);
         document.appendChild(element);
@@ -133,7 +136,7 @@ public class MessageBuilder {
         return this;
     }
 
-    private MessageBuilder setElementText(Element element, String value) {
+    private TestMessageBuilder setElementText(Element element, String value) {
         element.getFirstChild().setNodeValue(value);
         return this;
     }
@@ -186,5 +189,9 @@ public class MessageBuilder {
 
     public Element build() {
         return document.getDocumentElement();
+    }
+
+    public Document getDocument() {
+        return document;
     }
 }
