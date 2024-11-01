@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patches:
+  - target:
+      kind: Deployment
+      name: rabbitmq
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: rabbitmq:management
+      - op: add
+        path: /spec/template/spec/containers/0/ports/-
+        value:
+          containerPort: 15672
+  - target:
+      kind: Service
+      name: rabbitmq
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: NodePort
+      - op: add
+        path: /spec/ports/-
+        value:
+          name: management
+          port: 15672
+          targetPort: 15672
+          nodePort: 31672
+  - target:
+      kind: Service
+      name: quarkus-app
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: NodePort
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 31080
