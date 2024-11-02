@@ -12,6 +12,10 @@ spec:
       labels:
         app: quarkus-app
     spec:
+      initContainers:
+        - name: wait-for-rabbitmq
+          image: busybox:1.28
+          command: [ 'sh', '-c', 'until nslookup rabbitmq && nc -zv rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done;' ]
       containers:
         - name: quarkus-app
           image: quarkus-app:latest

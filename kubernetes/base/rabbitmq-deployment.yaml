@@ -16,3 +16,15 @@ spec:
         - name: rabbitmq
           ports:
             - containerPort: 5672
+          readinessProbe:
+            exec:
+              command: [ "rabbitmq-diagnostics", "ping" ]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "status"]
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 15
