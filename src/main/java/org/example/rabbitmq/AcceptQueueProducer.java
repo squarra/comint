@@ -9,7 +9,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.json.Json;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.example.messaging.MessageHeaderExtractor;
 import org.example.messaging.RoutingCriteria;
@@ -93,17 +92,6 @@ public class AcceptQueueProducer {
 
     private boolean isConnectionValid() {
         return connection != null && connection.isOpen();
-    }
-
-    private String createJsonMessage(RoutingCriteria routingCriteria, String content) {
-        return Json.createObjectBuilder()
-                .add("sender", routingCriteria.sender())
-                .add("messageType", routingCriteria.messageType())
-                .add("messageTypeVersion", routingCriteria.messageTypeVersion())
-                .add("recipient", routingCriteria.recipient())
-                .add("content", content)
-                .build()
-                .toString();
     }
 
     private String elementToString(Element element) throws TransformerException {
