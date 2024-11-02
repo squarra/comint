@@ -6,6 +6,7 @@ import jakarta.json.JsonObject;
 import java.io.StringReader;
 
 public record AcceptQueueMessage(
+        String origin,
         String sender,
         String messageType,
         String messageTypeVersion,
@@ -15,6 +16,7 @@ public record AcceptQueueMessage(
     public static AcceptQueueMessage fromJson(String json) {
         JsonObject jsonObject = Json.createReader(new StringReader(json)).readObject();
         return new AcceptQueueMessage(
+                jsonObject.getString("origin"),
                 jsonObject.getString("sender"),
                 jsonObject.getString("messageType"),
                 jsonObject.getString("messageTypeVersion"),
@@ -25,6 +27,7 @@ public record AcceptQueueMessage(
 
     public String toJson() {
         return Json.createObjectBuilder()
+                .add("origin", origin)
                 .add("sender", sender)
                 .add("messageType", messageType)
                 .add("messageTypeVersion", messageTypeVersion)

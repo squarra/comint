@@ -8,9 +8,13 @@ import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.example.routing.Host;
+import org.example.routing.Route;
+import org.example.routing.RoutingService;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 @Startup
@@ -18,13 +22,14 @@ import java.util.concurrent.TimeoutException;
 public class AcceptQueueConsumer {
 
     private static final String ACCEPT_QUEUE = "accept";
-
+    private final RoutingService routingService;
     private final ConnectionFactory factory;
     private Connection connection;
     private Channel channel;
 
     @Inject
-    public AcceptQueueConsumer(@ConfigProperty(name = "rabbitmq.host", defaultValue = "localhost") String rabbitMQHost) {
+    public AcceptQueueConsumer(@ConfigProperty(name = "rabbitmq.host", defaultValue = "localhost") String rabbitMQHost, RoutingService routingService) {
+        this.routingService = routingService;
         this.factory = new ConnectionFactory();
         factory.setHost(rabbitMQHost);
     }
@@ -40,8 +45,8 @@ public class AcceptQueueConsumer {
             startConsuming();
             Log.info("RabbitMQ connection established successfully");
         } catch (IOException | TimeoutException e) {
-            Log.error("Failed to establish RabbitMQ connection", e);
-            throw new RuntimeException(e);
+            Log.error("Failed to establish RabbitMQ connection: " + e.getMessage());
+            Log.debug(e);
         }
     }
 
@@ -66,8 +71,22 @@ public class AcceptQueueConsumer {
     }
 
     private void processMessage(AcceptQueueMessage message, String messageId) {
-        Log.infof("%s, %s, %s, %s", message.sender(), message.messageType(), message.messageTypeVersion(), message.recipient());
-        Log.infof("[ %s ] Processed message from %s successfully", messageId, message.sender());
+        if (!routingService.isKnownHost(message.origin())) {
+            Log.warnf("[ %s ] %s is not a known host", messageId, message.origin());
+            return;
+        }
+        Optional<Route> route = routingService.getRoute(message);
+        if (route.isEmpty()) {
+            Log.warnf("[ %s ] No route found", messageId);
+            return;
+        }
+        String destination = route.get().getDestination();
+        Optional<Host> host = routingService.getHost(destination);
+        if (host.isEmpty()) {
+            Log.warnf("[ %s ] Destination not registered", messageId);
+            return;
+        }
+        Log.infof("[ %s ] Sending message to %s", messageId, host.get().getUrl());
     }
 
     @PreDestroy

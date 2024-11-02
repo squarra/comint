@@ -16,10 +16,6 @@
         <quarkus.platform.version>3.15.1</quarkus.platform.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.3.1</surefire-plugin.version>
-
-        <cxf.version>4.0.5</cxf.version>
-        <jaxb.version>3.2.0</jaxb.version>
-        <rabbitmq.version>5.22.0</rabbitmq.version>
     </properties>
 
     <dependencyManagement>
@@ -54,7 +50,12 @@
         <dependency>
             <groupId>com.rabbitmq</groupId>
             <artifactId>amqp-client</artifactId>
-            <version>${rabbitmq.version}</version>
+            <version>5.22.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>5.9</version>
         </dependency>
         <!-- Test -->
         <dependency>
@@ -142,7 +143,7 @@
             <plugin>
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-codegen-plugin</artifactId>
-                <version>${cxf.version}</version>
+                <version>4.0.5</version>
                 <executions>
                     <execution>
                         <id>generate-sources</id>
@@ -173,7 +174,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>jaxb2-maven-plugin</artifactId>
-                <version>${jaxb.version}</version>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <goals>

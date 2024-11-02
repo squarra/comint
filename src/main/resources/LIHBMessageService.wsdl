@@ -1,9 +1,8 @@
 <wsdl:definitions name="LIHBMessageService" targetNamespace="http://uic.cc.org/UICMessage"
-                  xmlns:ns1="http://schemas.xmlsoap.org/soap/http" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
-                  xmlns:tns="http://uic.cc.org/UICMessage" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
-                  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://uic.cc.org/UICMessage"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
     <wsdl:types>
-        <xs:schema elementFormDefault="unqualified" targetNamespace="http://uic.cc.org/UICMessage" version="1.0"
+        <xs:schema targetNamespace="http://uic.cc.org/UICMessage" version="1.0"
                    xmlns:tns="http://uic.cc.org/UICMessage" xmlns:xs="http://www.w3.org/2001/XMLSchema">
             <xs:element name="UICHBMessage" type="tns:UICHBMessage"/>
             <xs:element name="UICHBMessageResponse" type="tns:UICHBMessageResponse"/>
@@ -30,10 +29,8 @@
     </wsdl:message>
     <wsdl:portType name="UICHBMessage">
         <wsdl:operation name="UICHBMessage">
-            <wsdl:input message="tns:UICHBMessage" name="UICHBMessage">
-            </wsdl:input>
-            <wsdl:output message="tns:UICHBMessageResponse" name="UICHBMessageResponse">
-            </wsdl:output>
+            <wsdl:input message="tns:UICHBMessage" name="UICHBMessage"/>
+            <wsdl:output message="tns:UICHBMessageResponse" name="UICHBMessageResponse"/>
         </wsdl:operation>
     </wsdl:portType>
     <wsdl:binding name="LIHBMessageServiceSoapBinding" type="tns:UICHBMessage">

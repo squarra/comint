@@ -1,4 +1,2 @@
-sender,messageType,messageTypeVersion,recipient
-RAIL,2006,3.5.0.0,EIU
-,,,
-,,,
+source,messageType,messageTypeVersion,recipient,destination
+RAIL,2006,3.5.0.0,0002,EIU

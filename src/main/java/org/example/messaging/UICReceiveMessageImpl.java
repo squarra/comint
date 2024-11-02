@@ -19,6 +19,7 @@ import javax.xml.parsers.ParserConfigurationException;
 public class UICReceiveMessageImpl implements UICReceiveMessage {
 
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
+    private static final String ORIGIN = "RAIL";
 
     private final LITechnicalAckBuilder liTechnicalAckBuilder;
     private final MessageValidator messageValidator;
@@ -39,7 +40,7 @@ public class UICReceiveMessageImpl implements UICReceiveMessage {
     public UICMessageResponse uicMessage(UICMessage parameters, String messageIdentifier, String messageLiHost, boolean compressed, boolean encrypted, boolean signed) {
         Element message = validateMessageOrThrow(parameters.getMessage(), messageIdentifier);
         LITechnicalAck liTechnicalAck = liTechnicalAckBuilder.build(message, messageIdentifier);
-        if (!acceptQueueProducer.send(message, messageIdentifier)) {
+        if (!acceptQueueProducer.send(message, messageIdentifier, ORIGIN)) {
             liTechnicalAck.setResponseStatus("NACK");
         }
         return createUICMessageResponse(liTechnicalAck);

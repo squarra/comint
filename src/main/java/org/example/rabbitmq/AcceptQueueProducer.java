@@ -53,12 +53,12 @@ public class AcceptQueueProducer {
             }
             Log.info("RabbitMQ connection established successfully");
         } catch (IOException | TimeoutException e) {
-            Log.error("Failed to establish RabbitMQ connection", e);
-            throw new RuntimeException(e);
+            Log.error("Failed to establish RabbitMQ connection: " + e.getMessage());
+            Log.debug(e);
         }
     }
 
-    public boolean send(Element message, String messageIdentifier) {
+    public boolean send(Element message, String messageIdentifier, String origin) {
         if (!isConnectionValid()) {
             Log.error("No valid RabbitMQ connection available");
             return false;
@@ -69,6 +69,7 @@ public class AcceptQueueProducer {
             String content = elementToString(message);
 
             AcceptQueueMessage queueMessage = new AcceptQueueMessage(
+                    origin,
                     routingCriteria.sender(),
                     routingCriteria.messageType(),
                     routingCriteria.messageTypeVersion(),
