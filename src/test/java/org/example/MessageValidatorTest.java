@@ -1,6 +1,9 @@
 package org.example;
 
 import jakarta.xml.soap.Node;
+import org.example.messaging.MessageHeaderExtractor;
+import org.example.messaging.MessageValidator;
+import org.example.messaging.SchemaValidationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;

@@ -1,7 +1,11 @@
-package org.example;
+package org.example.messaging;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.example.MessageKey;
+import org.example.Messages;
+import org.example.XmlSchemaService;
+import org.example.XmlUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;

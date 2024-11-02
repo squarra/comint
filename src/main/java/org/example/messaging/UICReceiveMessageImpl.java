@@ -1,4 +1,4 @@
-package org.example;
+package org.example.messaging;
 
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
@@ -6,11 +6,8 @@ import jakarta.jws.WebService;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
-import org.example.messaging.ObjectFactory;
-import org.example.messaging.UICMessage;
-import org.example.messaging.UICMessageResponse;
-import org.example.messaging.UICReceiveMessage;
 import org.example.messaging.ack.LITechnicalAck;
+import org.example.rabbitmq.AcceptQueueProducer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -22,29 +19,27 @@ import javax.xml.parsers.ParserConfigurationException;
 public class UICReceiveMessageImpl implements UICReceiveMessage {
 
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
-    private static final String ORIGIN = "ORIGIN";
 
     private final LITechnicalAckBuilder liTechnicalAckBuilder;
     private final MessageValidator messageValidator;
-    private final RabbitMQService rabbitMQService;
+    private final AcceptQueueProducer acceptQueueProducer;
 
     @Inject
     public UICReceiveMessageImpl(
             LITechnicalAckBuilder liTechnicalAckBuilder,
             MessageValidator messageValidator,
-            RabbitMQService rabbitMQService
+            AcceptQueueProducer acceptQueueProducer
     ) {
         this.liTechnicalAckBuilder = liTechnicalAckBuilder;
         this.messageValidator = messageValidator;
-        this.rabbitMQService = rabbitMQService;
+        this.acceptQueueProducer = acceptQueueProducer;
     }
 
     @Override
     public UICMessageResponse uicMessage(UICMessage parameters, String messageIdentifier, String messageLiHost, boolean compressed, boolean encrypted, boolean signed) {
         Element message = validateMessageOrThrow(parameters.getMessage(), messageIdentifier);
-        boolean messageSentSuccessfully = rabbitMQService.sendMessageToAcceptQueue(message, messageIdentifier, ORIGIN);
         LITechnicalAck liTechnicalAck = liTechnicalAckBuilder.build(message, messageIdentifier);
-        if (!messageSentSuccessfully) {
+        if (!acceptQueueProducer.send(message, messageIdentifier)) {
             liTechnicalAck.setResponseStatus("NACK");
         }
         return createUICMessageResponse(liTechnicalAck);

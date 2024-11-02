@@ -1,4 +1,4 @@
-package org.example;
+package org.example.messaging;
 
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -62,6 +62,10 @@ public class MessageHeaderExtractor {
     public String extractMessageRoutingId(Object payload) {
         String expression = MESSAGE_HEADER_RELATIVE + MESSAGE_ROUTING_ID;
         return extractValue(payload, expression, "MessageRoutingId");
+    }
+
+    public RoutingCriteria extractRoutingCriteria(Object payload) {
+        return new RoutingCriteria(extractSender(payload), extractMessageType(payload), extractMessageTypeVersion(payload), extractRecipient(payload));
     }
 
     /**
