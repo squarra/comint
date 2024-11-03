@@ -12,18 +12,19 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.*;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @ApplicationScoped
 public class XmlSchemaService {
 
     private static final String SCHEMA_DIRECTORY = "schemas/";
+    private static final List<String> SCHEMA_FILES = List.of(
+            "taf_cat_complete_sector_3.1.0.0.xsd",
+            "taf_cat_complete_sector_3.5.0.0.xsd"
+    );
 
     private final Map<String, Schema> version2Schema = new HashMap<>();
 
@@ -33,12 +34,9 @@ public class XmlSchemaService {
     }
 
     private void loadSchemas() {
-        try {
-            SchemaFactory schemaFactory = createSecureSchemaFactory();
-            getSchemaFiles().forEach(schemaFile -> loadSchema(schemaFile, schemaFactory));
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load schemas from directory: " + SCHEMA_DIRECTORY, e);
-        }
+        SchemaFactory factory = createSecureSchemaFactory();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        SCHEMA_FILES.forEach(schemaFile -> loadSchema(schemaFile, factory, classLoader));
     }
 
     private SchemaFactory createSecureSchemaFactory() {
@@ -52,68 +50,19 @@ public class XmlSchemaService {
         return factory;
     }
 
-    private Set<String> getSchemaFiles() throws IOException {
-        URL directoryUrl = Thread.currentThread().getContextClassLoader().getResource(SCHEMA_DIRECTORY);
-        if (directoryUrl == null) {
-            throw new IOException("Schema directory not found: " + SCHEMA_DIRECTORY);
-        }
-
-        URI schemaUri = getSchemaUri(directoryUrl);
-        return schemaUri.getScheme().equals("jar") ? getJarSchemaFiles(schemaUri) : getFileSystemSchemaFiles(schemaUri);
-    }
-
-    private URI getSchemaUri(URL directoryUrl) throws IOException {
-        try {
-            return directoryUrl.toURI();
-        } catch (URISyntaxException e) {
-            throw new IOException("Invalid URI for schema directory", e);
-        }
-    }
-
-    private Set<String> getJarSchemaFiles(URI schemaUri) throws IOException {
-        try (FileSystem fs = FileSystems.newFileSystem(schemaUri, Collections.emptyMap())) {
-            return findSchemaFiles(fs.getPath(SCHEMA_DIRECTORY));
-        }
-    }
-
-    private Set<String> getFileSystemSchemaFiles(URI schemaUri) throws IOException {
-        return findSchemaFiles(Paths.get(schemaUri));
-    }
-
-    private Set<String> findSchemaFiles(Path directory) throws IOException {
-        try (Stream<Path> walk = Files.walk(directory, 1)) {
-            return walk
-                    .filter(Files::isRegularFile)
-                    .map(Path::getFileName)
-                    .map(Path::toString)
-                    .filter(name -> name.endsWith(".xsd"))
-                    .collect(Collectors.toSet());
-        }
-    }
-
-    private void loadSchema(String schemaFile, SchemaFactory schemaFactory) {
-        try (InputStream schemaStream = Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream(SCHEMA_DIRECTORY + schemaFile)) {
-            if (schemaStream == null) {
-                Log.warnf("Schema file not found: %s", schemaFile);
-                return;
-            }
-
-            Optional<String> version = extractVersion(schemaFile);
-            if (version.isPresent()) {
-                version2Schema.put(version.get(), schemaFactory.newSchema(new StreamSource(schemaStream)));
-            }
+    private void loadSchema(String schemaFile, SchemaFactory schemaFactory, ClassLoader classLoader) {
+        try (InputStream schemaStream = classLoader.getResourceAsStream(SCHEMA_DIRECTORY + schemaFile)) {
+            String version = normalize(extractVersion(schemaFile));
+            Schema schema = schemaFactory.newSchema(new StreamSource(schemaStream));
+            version2Schema.put(version, schema);
         } catch (IOException | SAXException e) {
             Log.errorf(e, "Error loading schema file: %s", schemaFile);
         }
     }
 
-    private Optional<String> extractVersion(String filename) {
+    private String extractVersion(String filename) {
         int lastUnderscore = filename.lastIndexOf('_');
-        if (lastUnderscore == -1) return Optional.empty();
-
-        String version = filename.substring(lastUnderscore + 1, filename.length() - 4);
-        return Optional.of(normalize(version));
+        return filename.substring(lastUnderscore + 1, filename.length() - 4);
     }
 
     private String normalize(String version) {
