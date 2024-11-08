@@ -1,4 +1,4 @@
-package org.example.routing;
+package org.example.host;
 
 import com.opencsv.bean.CsvBindByName;
 
@@ -9,6 +9,9 @@ public class Host {
 
     @CsvBindByName
     private String url;
+
+    @CsvBindByName
+    private int heartbeatInterval;
 
     public String getName() {
         return name;
@@ -24,5 +27,13 @@ public class Host {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public int getHeartbeatInterval() {
+        return heartbeatInterval;
+    }
+
+    public void setHeartbeatInterval(int heartbeatInterval) {
+        this.heartbeatInterval = heartbeatInterval;
     }
 }

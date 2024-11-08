@@ -15,7 +15,7 @@ import javax.xml.xpath.XPathFactory;
  * Null-check the return values if working with unvalidated XML documents.
  */
 @ApplicationScoped
-public class MessageHeaderExtractor {
+public class MessageExtractor {
 
     private static final String MESSAGE_HEADER_RELATIVE = "//*[local-name()='MessageHeader']";
     private static final String MESSAGE_REFERENCE = "/*[local-name()='MessageReference']";

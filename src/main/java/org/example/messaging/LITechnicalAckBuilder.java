@@ -17,17 +17,17 @@ public class LITechnicalAckBuilder {
 
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
 
-    private final MessageHeaderExtractor messageHeaderExtractor;
+    private final MessageExtractor messageExtractor;
     private final String remoteLIName;
     private final int remoteLIInstanceNumber;
 
     @Inject
     public LITechnicalAckBuilder(
-            MessageHeaderExtractor messageHeaderExtractor,
+            MessageExtractor messageExtractor,
             @ConfigProperty(name = "comint.remote-li-name", defaultValue = "LIName") String remoteLIName,
             @ConfigProperty(name = "comint.remote-li-instance-number", defaultValue = "19") int remoteLIInstanceNumber
     ) {
-        this.messageHeaderExtractor = messageHeaderExtractor;
+        this.messageExtractor = messageExtractor;
         this.remoteLIName = remoteLIName;
         this.remoteLIInstanceNumber = remoteLIInstanceNumber;
     }
@@ -37,8 +37,8 @@ public class LITechnicalAckBuilder {
         liTechnicalAck.setAckIndentifier("ACKID" + messageIdentifier);
         liTechnicalAck.setResponseStatus("ACK");
         liTechnicalAck.setMessageReference(createMessageReference(message));
-        liTechnicalAck.setSender(messageHeaderExtractor.extractSender(message));
-        liTechnicalAck.setRecipient(messageHeaderExtractor.extractRecipient(message));
+        liTechnicalAck.setSender(messageExtractor.extractSender(message));
+        liTechnicalAck.setRecipient(messageExtractor.extractRecipient(message));
         liTechnicalAck.setRemoteLIName(remoteLIName);
         liTechnicalAck.setRemoteLIInstanceNumber(remoteLIInstanceNumber);
         liTechnicalAck.setMessageTransportMechanism("WEBSERVICE");
@@ -47,10 +47,10 @@ public class LITechnicalAckBuilder {
 
     private MessageReference createMessageReference(Node message) {
         MessageReference messageReference = OBJECT_FACTORY.createMessageReference();
-        messageReference.setMessageType(messageHeaderExtractor.extractMessageType(message));
-        messageReference.setMessageTypeVersion(messageHeaderExtractor.extractMessageTypeVersion(message));
-        messageReference.setMessageIdentifier(messageHeaderExtractor.extractMessageIdentifier(message));
-        messageReference.setMessageDateTime(createMessageDateTime(messageHeaderExtractor.extractMessageDateTime(message)));
+        messageReference.setMessageType(messageExtractor.extractMessageType(message));
+        messageReference.setMessageTypeVersion(messageExtractor.extractMessageTypeVersion(message));
+        messageReference.setMessageIdentifier(messageExtractor.extractMessageIdentifier(message));
+        messageReference.setMessageDateTime(createMessageDateTime(messageExtractor.extractMessageDateTime(message)));
         return messageReference;
     }
 

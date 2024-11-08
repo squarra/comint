@@ -5,7 +5,7 @@ import jakarta.inject.Inject;
 import org.example.MessageKey;
 import org.example.Messages;
 import org.example.XmlSchemaService;
-import org.example.XmlUtils;
+import org.example.util.XmlUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -19,13 +19,13 @@ import java.util.Optional;
 @ApplicationScoped
 public class MessageValidator {
 
-    private final MessageHeaderExtractor messageHeaderExtractor;
+    private final MessageExtractor messageExtractor;
     private final Messages messages;
     private final XmlSchemaService xmlSchemaService;
 
     @Inject
-    public MessageValidator(MessageHeaderExtractor messageHeaderExtractor, Messages messages, XmlSchemaService xmlSchemaService) {
-        this.messageHeaderExtractor = messageHeaderExtractor;
+    public MessageValidator(MessageExtractor messageExtractor, Messages messages, XmlSchemaService xmlSchemaService) {
+        this.messageExtractor = messageExtractor;
         this.messages = messages;
         this.xmlSchemaService = xmlSchemaService;
     }
@@ -51,7 +51,7 @@ public class MessageValidator {
         }
 
         Element tafTapTsiMessage = elementChildNodes.getFirst();
-        String tafTapTsiMessageIdentifier = messageHeaderExtractor.extractMessageIdentifier(tafTapTsiMessage);
+        String tafTapTsiMessageIdentifier = messageExtractor.extractMessageIdentifier(tafTapTsiMessage);
         if (tafTapTsiMessageIdentifier == null) {
             throw new SchemaValidationException(messages.get(MessageKey.MESSAGE_IDENTIFIER_MISSING));
         }
@@ -60,7 +60,7 @@ public class MessageValidator {
             throw new SchemaValidationException(messages.get(MessageKey.MESSAGE_IDENTIFIER_MISMATCH, messageIdentifier, tafTapTsiMessageIdentifier));
         }
 
-        String messageTypeVersion = messageHeaderExtractor.extractMessageTypeVersion(tafTapTsiMessage);
+        String messageTypeVersion = messageExtractor.extractMessageTypeVersion(tafTapTsiMessage);
         if (messageTypeVersion == null) {
             throw new SchemaValidationException(messages.get(MessageKey.MESSAGE_TYPE_VERSION_MISSING));
         }

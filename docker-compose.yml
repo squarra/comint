@@ -1,0 +1,38 @@
+services:
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./config/loki-config.yml:/etc/loki/local-config.yml
+    command: -config.file=/etc/loki/local-config.yml
+
+  alloy:
+    image: grafana/alloy:latest
+    ports:
+      - "12345:12345"
+    volumes:
+      - ./config/config.alloy:/etc/alloy/config.alloy
+      - ./logs:/tmp/app-logs/
+    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+
+volumes:
+  grafana-storage:

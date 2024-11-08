@@ -1,7 +1,7 @@
 package org.example;
 
 import jakarta.xml.soap.Node;
-import org.example.messaging.MessageHeaderExtractor;
+import org.example.messaging.MessageExtractor;
 import org.example.messaging.MessageValidator;
 import org.example.messaging.SchemaValidationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +17,7 @@ class MessageValidatorTest {
     private static final String MESSAGE_IDENTIFIER = "00000000-0000-0000-0000-000000000000";
 
     @Mock
-    private MessageHeaderExtractor messageHeaderExtractor;
+    private MessageExtractor messageExtractor;
     @Mock
     private XmlSchemaService xmlSchemaService;
 
@@ -28,7 +28,7 @@ class MessageValidatorTest {
     @BeforeEach
     void setUp() {
         messages = new Messages(ResourceBundle.getBundle("messages"));
-        messageValidator = new MessageValidator(messageHeaderExtractor, messages, xmlSchemaService);
+        messageValidator = new MessageValidator(messageExtractor, messages, xmlSchemaService);
     }
 
     @Test
