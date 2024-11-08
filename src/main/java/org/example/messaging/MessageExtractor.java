@@ -59,15 +59,6 @@ public class MessageExtractor {
         return extractValue(payload, expression, "Recipient");
     }
 
-    public String extractMessageRoutingId(Object payload) {
-        String expression = MESSAGE_HEADER_RELATIVE + MESSAGE_ROUTING_ID;
-        return extractValue(payload, expression, "MessageRoutingId");
-    }
-
-    public RoutingCriteria extractRoutingCriteria(Object payload) {
-        return new RoutingCriteria(extractSender(payload), extractMessageType(payload), extractMessageTypeVersion(payload), extractRecipient(payload));
-    }
-
     /**
      * Extracts a string value from an XML node using the provided XPath expression.
      *
