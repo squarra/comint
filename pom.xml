@@ -13,9 +13,9 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.15.1</quarkus.platform.version>
+        <quarkus.platform.version>3.16.2</quarkus.platform.version>
         <skipITs>true</skipITs>
-        <surefire-plugin.version>3.3.1</surefire-plugin.version>
+        <surefire-plugin.version>3.5.0</surefire-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -41,7 +41,6 @@
         <dependency>
             <groupId>io.quarkiverse.cxf</groupId>
             <artifactId>quarkus-cxf</artifactId>
-            <version>3.15.2</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -96,9 +95,6 @@
                     <execution>
                         <goals>
                             <goal>build</goal>
-                            <goal>generate-code</goal>
-                            <goal>generate-code-tests</goal>
-                            <goal>native-image-agent</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -156,13 +152,13 @@
                             <sourceRoot>${project.build.directory}/generated-sources/cxf</sourceRoot>
                             <wsdlOptions>
                                 <wsdlOption>
-                                    <wsdl>${basedir}/src/main/resources/LIReceiveMessageService.wsdl</wsdl>
+                                    <wsdl>${basedir}/src/main/resources/wsdl/LIReceiveMessageService.wsdl</wsdl>
                                     <packagenames>
                                         <packageName>org.example.messaging</packageName>
                                     </packagenames>
                                 </wsdlOption>
                                 <wsdlOption>
-                                    <wsdl>${basedir}/src/main/resources/LIHBMessageService.wsdl</wsdl>
+                                    <wsdl>${basedir}/src/main/resources/wsdl/LIHBMessageService.wsdl</wsdl>
                                     <packagenames>
                                         <packageName>org.example.heartbeat</packageName>
                                     </packagenames>

@@ -1,11 +1,9 @@
-package org.example.messaging;
+package org.example.messaging.ack;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.example.messaging.ack.LITechnicalAck;
-import org.example.messaging.ack.MessageReference;
-import org.example.messaging.ack.ObjectFactory;
+import org.example.messaging.MessageExtractor;
 import org.w3c.dom.Node;
 
 import javax.xml.datatype.DatatypeConfigurationException;

@@ -2,6 +2,7 @@ package org.example.messaging;
 
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
+import org.example.routing.RoutingCriteria;
 import org.w3c.dom.Node;
 
 import javax.xml.xpath.XPath;
@@ -25,7 +26,6 @@ public class MessageExtractor {
     private static final String MESSAGE_DATE_TIME = "/*[local-name()='MessageDateTime']";
     private static final String SENDER = "/*[local-name()='Sender']";
     private static final String RECIPIENT = "/*[local-name()='Recipient']";
-    private static final String MESSAGE_ROUTING_ID = "/*[local-name()='MessageRoutingID']";
 
     private static final XPath XPATH = XPathFactory.newInstance().newXPath();
 
@@ -57,6 +57,10 @@ public class MessageExtractor {
     public String extractRecipient(Object payload) {
         String expression = MESSAGE_HEADER_RELATIVE + RECIPIENT;
         return extractValue(payload, expression, "Recipient");
+    }
+
+    public RoutingCriteria extractRoutingCriteria(Object payload) {
+        return new RoutingCriteria(extractMessageType(payload), extractMessageTypeVersion(payload), extractRecipient(payload));
     }
 
     /**

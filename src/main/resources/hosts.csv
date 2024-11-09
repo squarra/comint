@@ -1,3 +1,4 @@
-name,url,heartbeatInterval
-RAIL,http://localhost:8088,10
-EIU,http://localhost:8082,
+name,url,messagingEndpoint,heartbeatEndpoint,heartbeatInterval
+RAIL,http://localhost:8088,/mockmessaging,/mockheartbeat,""
+EIU,http://localhost:8082,,,
+mock-external,http://localhost:8081/LIMessageProcessing/http,/UICCCMessageProcessing/UICCCMessageProcessingInboundWS,/LIServices/LIHBMessage,30

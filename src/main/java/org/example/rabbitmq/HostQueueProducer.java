@@ -12,7 +12,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.example.host.Host;
-import org.example.log.MessageLogger;
+import org.jboss.logmanager.MDC;
 import org.w3c.dom.Element;
 
 import javax.xml.transform.Transformer;
@@ -30,7 +30,6 @@ import java.util.concurrent.TimeoutException;
 @ApplicationScoped
 public class HostQueueProducer {
 
-    private final MessageLogger messageLogger;
     private final ConnectionFactory connectionFactory;
     private final TransformerFactory transformerFactory;
     private final Set<Host> hostQueues;
@@ -38,9 +37,7 @@ public class HostQueueProducer {
     private Channel channel;
 
     @Inject
-    public HostQueueProducer(MessageLogger messageLogger,
-                             @ConfigProperty(name = "rabbitmq.host", defaultValue = "localhost") String rabbitMQHost) {
-        this.messageLogger = messageLogger;
+    public HostQueueProducer(@ConfigProperty(name = "rabbitmq.host", defaultValue = "localhost") String rabbitMQHost) {
         this.connectionFactory = new ConnectionFactory();
         this.connectionFactory.setHost(rabbitMQHost);
         this.transformerFactory = TransformerFactory.newInstance();
@@ -67,7 +64,10 @@ public class HostQueueProducer {
     }
 
     public boolean send(Host host, String messageIdentifier, Element payload) {
+        MDC.put("Host", host.getName());
+        MDC.put("MessageId", messageIdentifier);
         if (!hostQueues.contains(host)) {
+            Log.error("Failed to find HostQueue");
             return false;
         }
 
@@ -78,9 +78,9 @@ public class HostQueueProducer {
                     .messageId(messageIdentifier)
                     .build();
             channel.basicPublish("", host.getName(), basicProperties, payloadString.getBytes(StandardCharsets.UTF_8));
-            messageLogger.info(messageIdentifier, "Successfully published message to '%s'", host.getName());
+            Log.info("Published message to HostQueue");
         } catch (TransformerException | IOException e) {
-            messageLogger.error(messageIdentifier, "Failed to publish message to '%s'", host.getName());
+            Log.errorf("Failed to publish message to HostQueue: %s", e.getMessage());
             return false;
         }
         return true;

@@ -44,9 +44,9 @@ public class HeartbeatScheduler {
         boolean success = heartbeatSender.sendHeartbeat(host);
 
         if (success) {
-            hostStateService.updateToActive(host);
+            hostStateService.heartbeatSuccess(host);
         } else {
-            hostStateService.updateToInactive(host);
+            hostStateService.heartbeatFailure(host);
         }
     }
 }

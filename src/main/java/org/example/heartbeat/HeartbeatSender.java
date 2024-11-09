@@ -1,11 +1,10 @@
 package org.example.heartbeat;
 
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import jakarta.xml.ws.BindingProvider;
 import org.example.host.Host;
-import org.example.log.HostLogger;
-import org.w3c.dom.Node;
+import org.jboss.logmanager.MDC;
 
 import java.util.List;
 
@@ -15,38 +14,28 @@ public class HeartbeatSender {
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
     private static final LIHBMessageService MESSAGE_SERVICE = new LIHBMessageService();
     private static final String HEARTBEAT_MESSAGE = "Are you alive?";
-    private static final String HEARTBEAT_ENDPOINT = "/mockheartbeat";
-
-    private final HostLogger hostLogger;
-
-    @Inject
-    public HeartbeatSender(HostLogger hostLogger) {
-        this.hostLogger = hostLogger;
-    }
+    private static final String HEARTBEAT_RESPONSE = "HEART_BEAT_WS_RECEIVED";
 
     public boolean sendHeartbeat(Host host) {
+        MDC.put("Host", host.getName());
         UICHBMessage client = createClient(host);
         if (client == null) return false;
 
         try {
             UICHBMessage_Type message = createHeartbeatMessage();
             List<Object> response = client.uichbMessage(message.getMessage(), message.getProperties());
-            hostLogger.debug(host, "Successfully sent heartbeat");
-
-            if (response == null) {
-                return false;
-            }
+            Log.debug("Sent heartbeat");
 
             for (Object object : response) {
-                if (object instanceof Node node) {
-                    hostLogger.debug(host, "Received heartbeat response: %s", node.getTextContent());
+                Log.debugf("Received heartbeat response: %s", object);
+                if (object.equals(HEARTBEAT_RESPONSE)) {
+                    return true;
                 }
             }
-            return true;
         } catch (Exception e) {
-            hostLogger.error(host, "Failed to send heartbeat: %s", e.getMessage());
-            return false;
+            Log.errorf("Failed to send heartbeat: %s", e.getMessage());
         }
+        return false;
     }
 
     private UICHBMessage createClient(Host host) {
@@ -54,13 +43,12 @@ public class HeartbeatSender {
             UICHBMessage client = MESSAGE_SERVICE.getUICHBMessagePort();
             BindingProvider bindingProvider = (BindingProvider) client;
 
-            String url = host.getUrl() + HEARTBEAT_ENDPOINT;
+            String url = host.getUrl() + host.getHeartbeatEndpoint();
             bindingProvider.getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
 
-            hostLogger.debug(host, "Successfully created SOAP client");
             return client;
         } catch (Exception e) {
-            hostLogger.error(host, e, "Failed to create SOAP client");
+            Log.errorf("Failed to create SOAP client: ", e.getMessage());
             return null;
         }
     }

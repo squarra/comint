@@ -11,6 +11,12 @@ public class Host {
     private String url;
 
     @CsvBindByName
+    private String messagingEndpoint;
+
+    @CsvBindByName
+    private String heartbeatEndpoint;
+
+    @CsvBindByName
     private int heartbeatInterval;
 
     public String getName() {
@@ -27,6 +33,22 @@ public class Host {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getMessagingEndpoint() {
+        return messagingEndpoint;
+    }
+
+    public void setMessagingEndpoint(String messagingEndpoint) {
+        this.messagingEndpoint = messagingEndpoint;
+    }
+
+    public String getHeartbeatEndpoint() {
+        return heartbeatEndpoint;
+    }
+
+    public void setHeartbeatEndpoint(String heartbeatEndpoint) {
+        this.heartbeatEndpoint = heartbeatEndpoint;
     }
 
     public int getHeartbeatInterval() {

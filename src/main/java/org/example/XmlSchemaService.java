@@ -4,6 +4,7 @@ import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import org.jboss.logmanager.MDC;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
@@ -29,6 +30,7 @@ public class XmlSchemaService {
     private final Map<String, Schema> version2Schema = new HashMap<>();
 
     void onStart(@Observes StartupEvent event) {
+        MDC.clear();
         loadSchemas();
         Log.infof("Found schema for versions: %s", version2Schema.keySet());
     }
