@@ -5,6 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.example.MessageExtractor;
 import org.example.util.XmlUtilityService;
@@ -21,6 +22,16 @@ import javax.xml.parsers.ParserConfigurationException;
 public class LITechnicalAckBuilder {
 
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
+    private static final JAXBContext JAXB_CONTEXT;
+
+    static {
+        try {
+            JAXB_CONTEXT = JAXBContext.newInstance(LITechnicalAck.class);
+        } catch (JAXBException e) {
+            Log.errorf("Failed to initialize JAXBContext: %s", e.getMessage());
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     private final MessageExtractor messageExtractor;
     private final XmlUtilityService xmlUtilityService;
@@ -79,5 +90,10 @@ public class LITechnicalAckBuilder {
             Log.error(e);
             throw new RuntimeException(e);
         }
+    }
+
+    public LITechnicalAck unmarshal(Node node) throws JAXBException {
+        Unmarshaller unmarshaller = JAXB_CONTEXT.createUnmarshaller();
+        return (LITechnicalAck) unmarshaller.unmarshal(node.getFirstChild());
     }
 }

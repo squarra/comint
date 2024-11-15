@@ -2,12 +2,11 @@ package org.example.messaging;
 
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.Unmarshaller;
 import jakarta.xml.ws.BindingProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.example.host.Host;
 import org.example.messaging.ack.LITechnicalAck;
+import org.example.messaging.ack.LITechnicalAckBuilder;
 import org.example.util.XmlUtilityService;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -16,6 +15,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
 public class UICMessageSender {
@@ -23,30 +23,31 @@ public class UICMessageSender {
     private static final LIReceiveMessageService MESSAGE_SERVICE = new LIReceiveMessageService();
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
 
+    private final LITechnicalAckBuilder liTechnicalAckBuilder;
     private final XmlUtilityService xmlUtilityService;
     private final String messageLiHost;
+    private final ConcurrentHashMap<Thread, UICReceiveMessage> clientCache = new ConcurrentHashMap<>();
 
     public UICMessageSender(
+            LITechnicalAckBuilder liTechnicalAckBuilder,
             XmlUtilityService xmlUtilityService,
             @ConfigProperty(name = "messageLiHost", defaultValue = "localhost") String messageLiHost
     ) {
+        this.liTechnicalAckBuilder = liTechnicalAckBuilder;
         this.xmlUtilityService = xmlUtilityService;
         this.messageLiHost = messageLiHost;
     }
 
     public boolean sendMessage(Host host, String messageIdentifier, String message) {
         Log.debug("Sending message to host");
-        UICReceiveMessage client = createClient(host);
+        UICReceiveMessage client = getOrCreateClient(host);
         if (client == null) return false;
 
         try {
             UICMessage uicMessage = createUICMessage(message);
             UICMessageResponse response = client.uicMessage(uicMessage, messageIdentifier, messageLiHost, false, false, false);
 
-            Node returnNode = (Node) response.getReturn();
-            JAXBContext context = JAXBContext.newInstance(LITechnicalAck.class);
-            Unmarshaller unmarshaller = context.createUnmarshaller();
-            LITechnicalAck liTechnicalAck = (LITechnicalAck) unmarshaller.unmarshal(returnNode.getFirstChild());
+            LITechnicalAck liTechnicalAck = liTechnicalAckBuilder.unmarshal((Node) response.getReturn());
             if (!(liTechnicalAck.getResponseStatus().equals("ACK"))) {
                 Log.warnf("Received LITechnicalAck with responseStatus '%s'", liTechnicalAck.getResponseStatus());
 
@@ -57,6 +58,10 @@ public class UICMessageSender {
             Log.errorf("Failed to send message: %s", e.getMessage());
             return false;
         }
+    }
+
+    private UICReceiveMessage getOrCreateClient(Host host) {
+        return clientCache.computeIfAbsent(Thread.currentThread(), k -> createClient(host));
     }
 
     private UICReceiveMessage createClient(Host host) {

@@ -72,7 +72,7 @@ public class HostQueueProducer {
                 .build();
 
         try {
-            Log.info("Publishing message to HostQueue");
+            Log.debug("Publishing message to HostQueue");
             channel.basicPublish(EXCHANGE, host.getName(), basicProperties, elementToBytes(message));
             return true;
         } catch (IOException e) {
