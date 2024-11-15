@@ -1,8 +1,9 @@
 package org.example.validation;
 
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.example.XmlSchemaService;
 import org.example.MessageExtractor;
+import org.example.XmlSchemaService;
 import org.example.util.XmlUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -28,7 +29,9 @@ public class MessageValidator {
         this.xmlSchemaService = xmlSchemaService;
     }
 
-    public Element validateMessage(Object message) {
+    public void validateMessage(Object message) throws MessageValidationException {
+        Log.info("Validating message");
+
         if (!(message instanceof Node node)) {
             throw new MessageValidationException("Message not a node");
         }
@@ -59,7 +62,5 @@ public class MessageValidator {
         } catch (IOException | SAXException e) {
             throw new MessageValidationException(e.getMessage());
         }
-
-        return tafTapTsiMessage;
     }
 }

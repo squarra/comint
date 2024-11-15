@@ -1,7 +1,7 @@
 package org.example.validation;
 
-public class MessageValidationException extends RuntimeException {
+public class MessageValidationException extends Exception {
     public MessageValidationException(String message) {
-        super("Message validation failed: " + message);
+        super(message);
     }
 }

@@ -7,8 +7,6 @@ import jakarta.xml.ws.WebServiceException;
 import org.example.host.Host;
 import org.example.util.XmlUtilityService;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -57,14 +55,8 @@ public class InboundMessageSender {
 
     private SendInboundMessage createInboundMessage(String message) throws ParserConfigurationException, IOException, SAXException {
         Document document = xmlUtilityService.parseXmlString(message);
-        Element wrapper = document.createElement("wrapper");
-        Node root = document.getDocumentElement();
-        document.removeChild(root);
-        wrapper.appendChild(root);
-        document.appendChild(wrapper);
-
         SendInboundMessage inboundMessage = OBJECT_FACTORY.createSendInboundMessage();
-        inboundMessage.setMessage(wrapper);
+        inboundMessage.setMessage(document.getDocumentElement());
         return inboundMessage;
     }
 }

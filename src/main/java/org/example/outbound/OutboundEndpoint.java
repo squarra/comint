@@ -1,5 +1,6 @@
 package org.example.outbound;
 
+import io.quarkus.logging.Log;
 import jakarta.jws.WebService;
 import org.example.MessageExtractor;
 import org.example.host.Host;
@@ -7,12 +8,13 @@ import org.example.logging.MDCKeys;
 import org.example.rabbitmq.HostQueueProducer;
 import org.example.routing.HostNotFoundException;
 import org.example.routing.RoutingService;
+import org.example.validation.MessageValidationException;
 import org.example.validation.MessageValidator;
 import org.jboss.logmanager.MDC;
 import org.w3c.dom.Element;
 
 @WebService(endpointInterface = "org.example.outbound.OutboundConnectorService")
-public class OutboundConnectorServiceImpl implements OutboundConnectorService {
+public class OutboundEndpoint implements OutboundConnectorService {
 
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
     private static final String SUCCESS_MESSAGE = "success";
@@ -23,7 +25,7 @@ public class OutboundConnectorServiceImpl implements OutboundConnectorService {
     private final MessageValidator messageValidator;
     private final RoutingService routingService;
 
-    public OutboundConnectorServiceImpl(
+    public OutboundEndpoint(
             HostQueueProducer hostQueueProducer,
             MessageExtractor messageExtractor,
             MessageValidator messageValidator,
@@ -41,9 +43,14 @@ public class OutboundConnectorServiceImpl implements OutboundConnectorService {
         String messageIdentifier = messageExtractor.extractMessageIdentifier(message);
         MDC.put(MDCKeys.MESSAGE_ID, messageIdentifier);
 
-        Element tafTapTsiMessage = messageValidator.validateMessage(message);
-        boolean success = processMessage(messageIdentifier, tafTapTsiMessage);
+        try {
+            messageValidator.validateMessage(message);
+        } catch (MessageValidationException e) {
+            Log.errorf("Failed to validate message: %s", e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
 
+        boolean success = processMessage(messageIdentifier, (Element) message);
         return createSendOutboundMessageResponse(success);
     }
 
