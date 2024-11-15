@@ -44,7 +44,7 @@ public class HostQueueProducer {
         MDC.clear();
         Log.infof("+++++ Initializing %s channel +++++", CHANNEL_ID);
         channel = rabbitMQService.getChannel(CHANNEL_ID);
-        MDC.clear();
+        Log.infof("Successfully initialized %s channel", CHANNEL_ID);
     }
 
     public void initializeHostQueue(Host host) {

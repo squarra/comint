@@ -1,5 +1,6 @@
 package org.example.outbound;
 
+import jakarta.jws.WebService;
 import org.example.MessageExtractor;
 import org.example.host.Host;
 import org.example.logging.MDCKeys;
@@ -10,6 +11,7 @@ import org.example.validation.MessageValidator;
 import org.jboss.logmanager.MDC;
 import org.w3c.dom.Element;
 
+@WebService(endpointInterface = "org.example.outbound.OutboundConnectorService")
 public class OutboundConnectorServiceImpl implements OutboundConnectorService {
 
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
@@ -42,12 +44,7 @@ public class OutboundConnectorServiceImpl implements OutboundConnectorService {
         Element tafTapTsiMessage = messageValidator.validateMessage(message);
         boolean success = processMessage(messageIdentifier, tafTapTsiMessage);
 
-        SendOutboundMessageResponse response = createSendOutboundMessageResponse();
-        if (!success) {
-            response.setResponse(ERROR_MESSAGE);
-        }
-
-        return response;
+        return createSendOutboundMessageResponse(success);
     }
 
     private boolean processMessage(String messageIdentifier, Element message) {
@@ -59,9 +56,9 @@ public class OutboundConnectorServiceImpl implements OutboundConnectorService {
         }
     }
 
-    private SendOutboundMessageResponse createSendOutboundMessageResponse() {
+    private SendOutboundMessageResponse createSendOutboundMessageResponse(boolean success) {
         SendOutboundMessageResponse response = OBJECT_FACTORY.createSendOutboundMessageResponse();
-        response.setResponse(SUCCESS_MESSAGE);
+        response.setResponse(success ? SUCCESS_MESSAGE : ERROR_MESSAGE);
         return response;
     }
 }

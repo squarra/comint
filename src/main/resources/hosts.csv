@@ -1,4 +1,5 @@
 name,passthrough,url,messagingEndpoint,heartbeatEndpoint,heartbeatInterval
 RAIL,,http://localhost:8088,/mockmessaging,/mockheartbeat,""
 EIU,,http://localhost:8082,,,
-mock-external,true,http://localhost:8081/LIMessageProcessing/http,/UICCCMessageProcessing/UICCCMessageProcessingInboundWS,/LIServices/LIHBMessage,""
+mock-external,false,http://localhost:8081/LIMessageProcessing/http,/UICCCMessageProcessing/UICCCMessageProcessingInboundWS,/LIServices/LIHBMessage,""
+mock-inbound,,http://localhost:8081/LIMessageProcessing/http,/wsconnector/inbound,,

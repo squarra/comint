@@ -47,9 +47,11 @@ public class HostQueueConsumer {
         MDC.clear();
         Log.infof("+++++ Initializing %s channel +++++", CHANNEL_ID);
         channel = rabbitMQService.getChannel(CHANNEL_ID);
+        Log.infof("Successfully initialized %s channel", CHANNEL_ID);
     }
 
     public void startConsuming(Host host) {
+        MDC.put(MDCKeys.HOST_NAME, host.getName());
         try {
             channel.queueDeclare(host.getName(), true, false, false, null);
             channel.basicQos(1);

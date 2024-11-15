@@ -36,6 +36,7 @@ public class RabbitMQService {
         Log.info("+++++ Initializing connection +++++");
         try {
             connection = connectionFactory.newConnection();
+            Log.infof("Successfully initialized connection");
         } catch (IOException | TimeoutException e) {
             throw new RuntimeException(e);
         }

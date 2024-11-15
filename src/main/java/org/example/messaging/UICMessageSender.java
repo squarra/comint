@@ -58,18 +58,13 @@ public class UICMessageSender {
     }
 
     private UICReceiveMessage createClient(Host host) {
-        try {
-            UICReceiveMessage client = MESSAGE_SERVICE.getUICReceiveMessagePort();
-            BindingProvider bindingProvider = (BindingProvider) client;
+        UICReceiveMessage client = MESSAGE_SERVICE.getUICReceiveMessagePort();
+        BindingProvider bindingProvider = (BindingProvider) client;
 
-            String url = host.getUrl() + host.getMessagingEndpoint();
-            bindingProvider.getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
+        String url = host.getUrl() + host.getMessagingEndpoint();
+        bindingProvider.getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
 
-            return client;
-        } catch (Exception e) {
-            Log.errorf("Failed to create SOAP client: %s", e.getMessage());
-            return null;
-        }
+        return client;
     }
 
     private UICMessage createUICMessage(String message) throws ParserConfigurationException, IOException, SAXException {
