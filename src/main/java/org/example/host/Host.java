@@ -8,9 +8,6 @@ public class Host {
     private String name;
 
     @CsvBindByName
-    private boolean passthrough;
-
-    @CsvBindByName
     private String url;
 
     @CsvBindByName
@@ -28,14 +25,6 @@ public class Host {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public boolean isPassthrough() {
-        return passthrough;
-    }
-
-    public void setPassthrough(boolean passthrough) {
-        this.passthrough = passthrough;
     }
 
     public String getUrl() {

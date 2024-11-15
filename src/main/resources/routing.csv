@@ -1,3 +1,2 @@
 source,messageType,messageTypeVersion,recipient,destination
-,*,*,*,mock-inbound
-RAIL,2006,3.5.0.0,0002,EIU
+,*,*,*,mock-external

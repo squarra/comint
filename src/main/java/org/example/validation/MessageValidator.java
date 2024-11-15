@@ -29,8 +29,8 @@ public class MessageValidator {
         this.xmlSchemaService = xmlSchemaService;
     }
 
-    public void validateMessage(Object message) throws MessageValidationException {
-        Log.info("Validating message");
+    public Element validateMessage(Object message) throws MessageValidationException {
+        Log.debug("Validating message");
 
         if (!(message instanceof Node node)) {
             throw new MessageValidationException("Message not a node");
@@ -62,5 +62,7 @@ public class MessageValidator {
         } catch (IOException | SAXException e) {
             throw new MessageValidationException(e.getMessage());
         }
+
+        return tafTapTsiMessage;
     }
 }

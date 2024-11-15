@@ -35,20 +35,22 @@ public class UICMessageSender {
     }
 
     public boolean sendMessage(Host host, String messageIdentifier, String message) {
+        Log.debug("Sending message to host");
         UICReceiveMessage client = createClient(host);
         if (client == null) return false;
 
         try {
             UICMessage uicMessage = createUICMessage(message);
             UICMessageResponse response = client.uicMessage(uicMessage, messageIdentifier, messageLiHost, false, false, false);
-            Log.info("Sent message");
 
             Node returnNode = (Node) response.getReturn();
             JAXBContext context = JAXBContext.newInstance(LITechnicalAck.class);
             Unmarshaller unmarshaller = context.createUnmarshaller();
             LITechnicalAck liTechnicalAck = (LITechnicalAck) unmarshaller.unmarshal(returnNode.getFirstChild());
-            Log.infof("Received LITechnicalAck with responseStatus '%s'", liTechnicalAck.getResponseStatus());
+            if (!(liTechnicalAck.getResponseStatus().equals("ACK"))) {
+                Log.warnf("Received LITechnicalAck with responseStatus '%s'", liTechnicalAck.getResponseStatus());
 
+            }
             return true;
         } catch (Exception e) {
             // Either bad response or host not reachable

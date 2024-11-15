@@ -35,19 +35,19 @@ public abstract class AbstractUICMessageEndpoint implements UICReceiveMessage {
     public UICMessageResponse uicMessage(UICMessage parameters, String messageIdentifier, String messageLiHost, boolean compressed, boolean encrypted, boolean signed) {
         MDC.put(MDCKeys.MESSAGE_ID, messageIdentifier);
         Log.debug("Received message");
+        Element tafTapTsiMessage = validateOrThrow(parameters.getMessage());
+        boolean success = processMessage(messageIdentifier, tafTapTsiMessage);
+        Element liTechnicalAck = liTechnicalAckBuilder.build(messageIdentifier, success, tafTapTsiMessage);
+        return createUICMessageResponse(liTechnicalAck);
+    }
 
+    private Element validateOrThrow(Object message) {
         try {
-            messageValidator.validateMessage(parameters.getMessage());
+            return messageValidator.validateMessage(message);
         } catch (MessageValidationException e) {
             Log.errorf("Failed to validate message: %s", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
-        Element tafTapTsiMessage = (Element) parameters.getMessage();
-
-        boolean success = processMessage(messageIdentifier, tafTapTsiMessage);
-        Element liTechnicalAck = liTechnicalAckBuilder.build(messageIdentifier, success, tafTapTsiMessage);
-
-        return createUICMessageResponse(liTechnicalAck);
     }
 
     private boolean processMessage(String messageIdentifier, Element message) {

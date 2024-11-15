@@ -42,16 +42,18 @@ public class OutboundEndpoint implements OutboundConnectorService {
         Object message = parameters.getMessage();
         String messageIdentifier = messageExtractor.extractMessageIdentifier(message);
         MDC.put(MDCKeys.MESSAGE_ID, messageIdentifier);
+        Element tafTapTsiMessage = validateOrThrow(message);
+        boolean success = processMessage(messageIdentifier, tafTapTsiMessage);
+        return createSendOutboundMessageResponse(success);
+    }
 
+    private Element validateOrThrow(Object message) {
         try {
-            messageValidator.validateMessage(message);
+            return messageValidator.validateMessage(message);
         } catch (MessageValidationException e) {
             Log.errorf("Failed to validate message: %s", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
-
-        boolean success = processMessage(messageIdentifier, (Element) message);
-        return createSendOutboundMessageResponse(success);
     }
 
     private boolean processMessage(String messageIdentifier, Element message) {

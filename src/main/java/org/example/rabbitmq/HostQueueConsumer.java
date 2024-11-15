@@ -62,7 +62,7 @@ public class HostQueueConsumer {
                 String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                 MDC.put(MDCKeys.MESSAGE_ID, messageId);
                 MDC.put(MDCKeys.HOST_NAME, host.getName());
-                Log.info("Consumed message from HostQueue");
+                Log.debug("Consumed message from HostQueue");
 
                 boolean success;
                 if (messageType.equals(MessageType.UICMessage.name())) {
