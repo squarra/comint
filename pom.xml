@@ -163,6 +163,18 @@
                                         <packageName>org.example.heartbeat</packageName>
                                     </packagenames>
                                 </wsdlOption>
+                                <wsdlOption>
+                                    <wsdl>${basedir}/src/main/resources/wsdl/InboundConnectorService.wsdl</wsdl>
+                                    <packagenames>
+                                        <packageName>org.example.inbound</packageName>
+                                    </packagenames>
+                                </wsdlOption>
+                                <wsdlOption>
+                                    <wsdl>${basedir}/src/main/resources/wsdl/OutboundConnectorService.wsdl</wsdl>
+                                    <packagenames>
+                                        <packageName>org.example.outbound</packageName>
+                                    </packagenames>
+                                </wsdlOption>
                             </wsdlOptions>
                         </configuration>
                         <goals>
@@ -180,11 +192,11 @@
                         <goals>
                             <goal>xjc</goal>
                         </goals>
+                        <configuration>
+                            <packageName>org.example.messaging.ack</packageName>
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <packageName>org.example.messaging.ack</packageName>
-                </configuration>
             </plugin>
         </plugins>
     </build>

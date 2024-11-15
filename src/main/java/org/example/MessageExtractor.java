@@ -1,4 +1,4 @@
-package org.example.messaging;
+package org.example;
 
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -73,19 +73,19 @@ public class MessageExtractor {
      */
     private String extractValue(Object payload, String expression, String fieldName) {
         if (!(payload instanceof Node node)) {
-            Log.warnf("Failed to extract {}. Payload type '{}' is not a valid XML Node", fieldName, payload != null ? payload.getClass().getSimpleName() : "null");
+            Log.warnf("Failed to extract %s. Payload type '%s' is not a valid XML Node", fieldName, payload != null ? payload.getClass().getSimpleName() : "null");
             return null;
         }
 
         try {
             String value = (String) XPATH.evaluate(expression + "/text()", node, XPathConstants.STRING);
             if (value.isBlank()) {
-                Log.debugf("No {} found in XML payload", fieldName);
+                Log.debugf("No %s found in XML payload", fieldName);
                 return null;
             }
             return value.trim();
         } catch (XPathExpressionException e) {
-            Log.warnf("Error extracting {} from XML payload: {}", fieldName, e.getMessage());
+            Log.warnf("Error extracting %s from XML payload: %", fieldName, e.getMessage());
             return null;
         }
     }

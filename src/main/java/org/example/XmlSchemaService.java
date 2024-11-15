@@ -4,13 +4,11 @@ import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import org.example.util.XmlUtilityService;
 import org.jboss.logmanager.MDC;
 import org.xml.sax.SAXException;
 
-import javax.xml.XMLConstants;
-import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -27,38 +25,34 @@ public class XmlSchemaService {
             "taf_cat_complete_sector_3.5.0.0.xsd"
     );
 
+    private final XmlUtilityService xmlUtilityService;
     private final Map<String, Schema> version2Schema = new HashMap<>();
+
+    public XmlSchemaService(XmlUtilityService xmlUtilityService) {
+        this.xmlUtilityService = xmlUtilityService;
+    }
 
     void onStart(@Observes StartupEvent event) {
         MDC.clear();
+        Log.info("***** Loading schemas *****");
         loadSchemas();
-        Log.infof("Found schema for versions: %s", version2Schema.keySet());
+        MDC.clear();
     }
 
     private void loadSchemas() {
-        SchemaFactory factory = createSecureSchemaFactory();
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        SCHEMA_FILES.forEach(schemaFile -> loadSchema(schemaFile, factory, classLoader));
+        SCHEMA_FILES.forEach(schemaFile -> loadSchema(schemaFile, classLoader));
     }
 
-    private SchemaFactory createSecureSchemaFactory() {
-        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        try {
-            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
-        } catch (SAXException e) {
-            Log.warn("Could not set XML security properties", e);
-        }
-        return factory;
-    }
-
-    private void loadSchema(String schemaFile, SchemaFactory schemaFactory, ClassLoader classLoader) {
+    private void loadSchema(String schemaFile, ClassLoader classLoader) {
+        MDC.put("schemaFile", schemaFile);
+        Log.debug("Loading schema");
         try (InputStream schemaStream = classLoader.getResourceAsStream(SCHEMA_DIRECTORY + schemaFile)) {
             String version = normalize(extractVersion(schemaFile));
-            Schema schema = schemaFactory.newSchema(new StreamSource(schemaStream));
+            Schema schema = xmlUtilityService.createSchema(schemaStream);
             version2Schema.put(version, schema);
         } catch (IOException | SAXException e) {
-            Log.errorf(e, "Error loading schema file: %s", schemaFile);
+            Log.error("Error loading schema", e);
         }
     }
 

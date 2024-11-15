@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<definitions name="OutboundConnectorService" targetNamespace="http://uic.cc.org/li/messageprocessing/outbound/"
+             xmlns:ns1="http://uic.cc.org/li/messageprocessing/header"
+             xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="http://uic.cc.org/li/messageprocessing/outbound/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <types>
+        <xs:schema elementFormDefault="unqualified" targetNamespace="http://uic.cc.org/li/messageprocessing/outbound/"
+                   version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <xs:element name="SendOutboundMessage" type="tns:SendOutboundMessage"/>
+            <xs:element name="SendOutboundMessageResponse" type="tns:SendOutboundMessageResponse"/>
+            <xs:complexType name="SendOutboundMessage">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="Message" type="xs:anyType"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="SendOutboundMessageResponse">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="Response" type="xs:anyType"/>
+                </xs:sequence>
+            </xs:complexType>
+        </xs:schema>
+        <xsd:schema attributeFormDefault="unqualified" elementFormDefault="unqualified"
+                    targetNamespace="http://uic.cc.org/li/messageprocessing/header"
+                    xmlns="http://uic.cc.org/li/messageprocessing/header">
+            <xsd:element name="Encoded" nillable="true" type="xsd:string"/>
+        </xsd:schema>
+    </types>
+    <message name="SendOutboundMessageResponse">
+        <part element="tns:SendOutboundMessageResponse" name="parameters"/>
+    </message>
+    <message name="SendOutboundMessage">
+        <part element="tns:SendOutboundMessage" name="parameters"/>
+        <part element="ns1:Encoded" name="Encoded"/>
+    </message>
+    <portType name="OutboundConnectorService">
+        <operation name="SendOutboundMessage">
+            <input message="tns:SendOutboundMessage" name="SendOutboundMessage"/>
+            <output message="tns:SendOutboundMessageResponse" name="SendOutboundMessageResponse"/>
+        </operation>
+    </portType>
+    <binding name="OutboundConnectorServiceSoapBinding" type="tns:OutboundConnectorService">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="SendOutboundMessage">
+            <soap:operation soapAction="SendOutboundMessageAction" style="document"/>
+            <input name="SendOutboundMessage">
+                <soap:header message="tns:SendOutboundMessage" part="Encoded" use="literal"/>
+                <soap:body parts="parameters" use="literal"/>
+            </input>
+            <output name="SendOutboundMessageResponse">
+                <soap:body use="literal"/>
+            </output>
+        </operation>
+    </binding>
+    <service name="OutboundConnectorService">
+        <port binding="tns:OutboundConnectorServiceSoapBinding" name="OutboundConnectorServicePort">
+            <soap:address
+                    location="https://taftaptsi-citest.ivu.de:8443/LIMessageProcessing/http/wsconnector/WS_LOCAL_OUT_1180_0080"/>
+        </port>
+    </service>
+</definitions>

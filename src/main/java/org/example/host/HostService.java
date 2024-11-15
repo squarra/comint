@@ -1,9 +1,12 @@
 package org.example.host;
 
+import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.example.logging.MDCKeys;
 import org.example.rabbitmq.HostQueueConsumer;
 import org.example.rabbitmq.HostQueueProducer;
 import org.example.util.CsvFileReader;
@@ -21,6 +24,7 @@ public class HostService {
     private final HostQueueProducer hostQueueProducer;
     private final HostQueueConsumer hostQueueConsumer;
     private final HeartbeatScheduler heartbeatScheduler;
+    private final boolean consumerEnabled;
     private final List<Host> hosts;
 
     @Inject
@@ -28,41 +32,33 @@ public class HostService {
             HostStateService hostStateService,
             HostQueueProducer hostQueueProducer,
             HostQueueConsumer hostQueueConsumer,
-            HeartbeatScheduler heartbeatScheduler) {
+            HeartbeatScheduler heartbeatScheduler,
+            @ConfigProperty(name = "comint.host.consumer.enable", defaultValue = "true") boolean consumerEnabled
+    ) {
         this.hostStateService = hostStateService;
         this.hostQueueProducer = hostQueueProducer;
         this.hostQueueConsumer = hostQueueConsumer;
         this.heartbeatScheduler = heartbeatScheduler;
+        this.consumerEnabled = consumerEnabled;
         this.hosts = CsvFileReader.readFile(HOSTS_FILE, Host.class);
     }
 
     void onStart(@Observes StartupEvent ev) {
         MDC.clear();
-        initializeHostStates();
-        initializeHostQueueProducers();
-        initializeHostQueueConsumers();
-        scheduleHeartbeats();
+        Log.info("***** Initializing hosts *****");
+        initializeHosts();
         MDC.clear();
     }
 
-    private void initializeHostStates() {
-        hosts.forEach(hostStateService::initializeHostState);
-    }
+    private void initializeHosts() {
+        hosts.forEach(host -> {
+            MDC.put(MDCKeys.HOST_NAME, host.getName());
 
-    private void initializeHostQueueProducers() {
-        hosts.forEach(hostQueueProducer::initializeHostQueue);
-    }
-
-    private void initializeHostQueueConsumers() {
-        hosts.forEach(hostQueueConsumer::startConsumingHostQueue);
-    }
-
-    private void scheduleHeartbeats() {
-        hosts.stream().filter(this::hasHeartbeat).forEach(heartbeatScheduler::scheduleHeartbeat);
-    }
-
-    private boolean hasHeartbeat(Host host) {
-        return host.getHeartbeatInterval() != 0;
+            hostStateService.initializeHostState(host);
+            hostQueueProducer.initializeHostQueue(host);
+            if (consumerEnabled) hostQueueConsumer.startConsuming(host);
+            if (host.getHeartbeatInterval() != 0) heartbeatScheduler.scheduleHeartbeat(host);
+        });
     }
 
     public Optional<Host> getHost(String name) {

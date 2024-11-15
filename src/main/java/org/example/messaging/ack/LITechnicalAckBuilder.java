@@ -3,7 +3,7 @@ package org.example.messaging.ack;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.example.messaging.MessageExtractor;
+import org.example.MessageExtractor;
 import org.w3c.dom.Node;
 
 import javax.xml.datatype.DatatypeConfigurationException;

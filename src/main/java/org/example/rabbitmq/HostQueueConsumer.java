@@ -1,128 +1,89 @@
 package org.example.rabbitmq;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.CancelCallback;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.DeliverCallback;
 import io.quarkus.logging.Log;
-import io.quarkus.runtime.ShutdownEvent;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.example.MessageType;
 import org.example.host.Host;
 import org.example.host.HostStateService;
-import org.example.messaging.MessageSender;
+import org.example.inbound.InboundMessageSender;
+import org.example.logging.MDCKeys;
+import org.example.messaging.UICMessageSender;
 import org.jboss.logmanager.MDC;
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.IOException;
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeoutException;
 
 @ApplicationScoped
 public class HostQueueConsumer {
 
+    private static final String CHANNEL_ID = "consumer";
+
     private final HostStateService hostStateService;
-    private final MessageSender messageSender;
-    private final ConnectionFactory connectionFactory;
-    private final DocumentBuilderFactory documentBuilderFactory;
-    private final ExecutorService executorService;
-    private final ConcurrentHashMap<String, Channel> hostChannels;
-    private Connection connection;
+    private final InboundMessageSender inboundMessageSender;
+    private final RabbitMQService rabbitMQService;
+    private final UICMessageSender uicMessageSender;
+    private Channel channel;
 
     @Inject
     public HostQueueConsumer(
             HostStateService hostStateService,
-            MessageSender messageSender,
-            @ConfigProperty(name = "rabbitmq.host", defaultValue = "localhost") String rabbitMQHost,
-            @ConfigProperty(name = "rabbitmq.consumer.threads", defaultValue = "4") int numThreads) {
+            InboundMessageSender inboundMessageSender,
+            RabbitMQService rabbitMQService,
+            UICMessageSender uicMessageSender
+    ) {
         this.hostStateService = hostStateService;
-        this.messageSender = messageSender;
-        this.connectionFactory = new ConnectionFactory();
-        this.connectionFactory.setHost(rabbitMQHost);
-        this.documentBuilderFactory = DocumentBuilderFactory.newInstance();
-        this.executorService = Executors.newFixedThreadPool(numThreads);
-        this.hostChannels = new ConcurrentHashMap<>();
+        this.inboundMessageSender = inboundMessageSender;
+        this.rabbitMQService = rabbitMQService;
+        this.uicMessageSender = uicMessageSender;
     }
 
     @PostConstruct
     void init() {
-        try {
-            connection = connectionFactory.newConnection(executorService);
-        } catch (IOException | TimeoutException e) {
-            throw new RuntimeException("Failed to initialize RabbitMQ connection", e);
-        }
+        MDC.clear();
+        Log.infof("+++++ Initializing %s channel +++++", CHANNEL_ID);
+        channel = rabbitMQService.getChannel(CHANNEL_ID);
     }
 
-    public void startConsumingHostQueue(Host host) {
-        MDC.clear();
-        MDC.put("Host", host.getName());
+    public void startConsuming(Host host) {
         try {
-            Channel channel = connection.createChannel();
             channel.queueDeclare(host.getName(), true, false, false, null);
+            channel.basicQos(1);
 
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
                 String messageId = delivery.getProperties().getMessageId();
-                MDC.put("Host", host.getName());
-                MDC.put("MessageID", messageId);
+                String messageType = delivery.getProperties().getType();
+                String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
+                MDC.put(MDCKeys.MESSAGE_ID, messageId);
+                MDC.put(MDCKeys.HOST_NAME, host.getName());
                 Log.info("Consumed message from HostQueue");
-                try {
-                    String xmlContent = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    Document message = parseXmlContent(xmlContent);
 
-                    boolean success = messageSender.sendMessage(host, messageId, message.getDocumentElement());
-                    if (success) {
-                        channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                    } else {
-                        channel.basicReject(delivery.getEnvelope().getDeliveryTag(), false);
-                        hostStateService.messageDeliveryFailure(host);
-                    }
-                } catch (Exception e) {
+                boolean success;
+                if (messageType.equals(MessageType.UICMessage.name())) {
+                    success = uicMessageSender.sendMessage(host, messageId, message);
+                } else {
+                    success = inboundMessageSender.sendMessage(host, message);
+                }
+
+                if (success) {
+                    channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                } else {
                     channel.basicReject(delivery.getEnvelope().getDeliveryTag(), false);
-                    Log.errorf("Failed to process message: %s", e.getMessage());
+                    hostStateService.messageDeliveryFailure(host);
                 }
             };
 
             CancelCallback cancelCallback = consumerTag -> Log.info("Consumer cancelled for queue");
 
-            channel.basicQos(1);
             channel.basicConsume(host.getName(), false, deliverCallback, cancelCallback);
-            hostChannels.put(host.getName(), channel);
 
             Log.info("Started consuming messages");
         } catch (IOException e) {
             throw new RuntimeException("Failed to start consuming from queue: " + host.getName(), e);
-        }
-    }
-
-    private Document parseXmlContent(String xmlContent) throws Exception {
-        DocumentBuilder builder = documentBuilderFactory.newDocumentBuilder();
-        return builder.parse(new InputSource(new StringReader(xmlContent)));
-    }
-
-    void onStop(@Observes ShutdownEvent ev) {
-        try {
-            for (Channel channel : hostChannels.values()) {
-                if (channel.isOpen()) {
-                    channel.close();
-                }
-            }
-            hostChannels.clear();
-
-            if (connection != null && connection.isOpen()) {
-                connection.close();
-            }
-            executorService.shutdown();
-
-            Log.info("RabbitMQ consumer resources closed successfully");
-        } catch (IOException | TimeoutException e) {
-            Log.error("Error closing RabbitMQ consumer resources", e);
         }
     }
 }

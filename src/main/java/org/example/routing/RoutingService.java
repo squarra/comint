@@ -1,7 +1,13 @@
 package org.example.routing;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import org.example.MessageExtractor;
+import org.example.host.Host;
+import org.example.host.HostService;
+import org.example.logging.MDCKeys;
 import org.example.util.CsvFileReader;
+import org.jboss.logmanager.MDC;
+import org.w3c.dom.Element;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,15 +17,42 @@ public class RoutingService {
 
     private static final String ROUTING_FILE = "routing.csv";
 
+    private final HostService hostService;
+    private final MessageExtractor messageExtractor;
     private final List<Route> routes = CsvFileReader.readFile(ROUTING_FILE, Route.class);
 
-    public Optional<String> getDestination(RoutingCriteria routingCriteria) {
+    public RoutingService(
+            HostService hostService,
+            MessageExtractor messageExtractor
+    ) {
+        this.hostService = hostService;
+        this.messageExtractor = messageExtractor;
+    }
+
+    public Host findHost(Element message) throws HostNotFoundException {
+        RoutingCriteria routingCriteria = messageExtractor.extractRoutingCriteria(message);
+        String destination = getDestination(routingCriteria);
+        if (destination == null) {
+            throw new HostNotFoundException("Failed to find destination in routes");
+        }
+
+        Optional<Host> host = hostService.getHost(destination);
+        if (host.isEmpty()) {
+            throw new HostNotFoundException("Failed to find host for " + destination);
+        }
+
+        MDC.put(MDCKeys.HOST_NAME, host.get().getName());
+        return host.get();
+    }
+
+    private String getDestination(RoutingCriteria routingCriteria) {
         return routes.stream()
                 .filter(route -> matches(route.getMessageType(), routingCriteria.messageType()))
                 .filter(route -> matches(route.getMessageTypeVersion(), routingCriteria.messageTypeVersion()))
                 .filter(route -> matches(route.getRecipient(), routingCriteria.recipient()))
                 .map(Route::getDestination)
-                .findFirst();
+                .findFirst()
+                .orElse(null);
     }
 
     private boolean matches(String pattern, String value) {
