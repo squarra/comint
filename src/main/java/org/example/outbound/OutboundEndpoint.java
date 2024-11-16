@@ -59,7 +59,7 @@ public class OutboundEndpoint implements OutboundConnectorService {
     private boolean processMessage(String messageIdentifier, Element message) {
         try {
             Host host = routingService.findHost(message);
-            return hostQueueProducer.sendUICMessage(host, messageIdentifier, message);
+            return hostQueueProducer.sendUICMessage(host.getName(), messageIdentifier, message);
         } catch (HostNotFoundException e) {
             throw new RuntimeException(e);
         }

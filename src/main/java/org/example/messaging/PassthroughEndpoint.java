@@ -1,7 +1,6 @@
 package org.example.messaging;
 
 import jakarta.jws.WebService;
-import org.example.host.Host;
 import org.example.messaging.ack.LITechnicalAckBuilder;
 import org.example.rabbitmq.HostQueueProducer;
 import org.example.routing.RoutingService;
@@ -24,7 +23,7 @@ public class PassthroughEndpoint extends AbstractUICMessageEndpoint implements U
     }
 
     @Override
-    protected boolean sendMessage(Host host, String messageIdentifier, Element message) {
-        return hostQueueProducer.sendUICMessage(host, messageIdentifier, message);
+    protected boolean sendMessage(String queue, String messageIdentifier, Element message) {
+        return hostQueueProducer.sendUICMessage(queue, messageIdentifier, message);
     }
 }

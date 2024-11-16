@@ -1,14 +1,11 @@
 package org.example.rabbitmq;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
 import io.quarkus.logging.Log;
-import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.example.MessageType;
 import org.example.host.Host;
 import org.example.util.XmlUtilityService;
-import org.jboss.logmanager.MDC;
 import org.w3c.dom.Element;
 
 import javax.xml.transform.Transformer;
@@ -23,13 +20,11 @@ import java.util.Date;
 @ApplicationScoped
 public class HostQueueProducer {
 
-    private static final String CHANNEL_ID = "producer";
     private static final String EXCHANGE = "";
     private static final int DELIVERY_MODE_PERSISTENT = 2;
 
     private final RabbitMQService rabbitMQService;
     private final XmlUtilityService xmlUtilityService;
-    private Channel channel;
 
     public HostQueueProducer(
             RabbitMQService rabbitMQService,
@@ -39,31 +34,23 @@ public class HostQueueProducer {
         this.xmlUtilityService = xmlUtilityService;
     }
 
-    @PostConstruct
-    void init() {
-        MDC.clear();
-        Log.infof("+++++ Initializing %s channel +++++", CHANNEL_ID);
-        channel = rabbitMQService.getChannel(CHANNEL_ID);
-        Log.infof("Successfully initialized %s channel", CHANNEL_ID);
-    }
-
     public void initializeHostQueue(Host host) {
         try {
-            channel.queueDeclare(host.getName(), true, false, false, null);
+            rabbitMQService.getChannel().queueDeclare(host.getName(), true, false, false, null);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public boolean sendUICMessage(Host host, String messageIdentifier, Element message) {
-        return send(host, messageIdentifier, MessageType.UICMessage, message);
+    public boolean sendUICMessage(String queue, String messageIdentifier, Element message) {
+        return send(queue, messageIdentifier, MessageType.UICMessage, message);
     }
 
-    public boolean sendInboundMessage(Host host, String messageIdentifier, Element message) {
-        return send(host, messageIdentifier, MessageType.InboundMessage, message);
+    public boolean sendInboundMessage(String queue, String messageIdentifier, Element message) {
+        return send(queue, messageIdentifier, MessageType.InboundMessage, message);
     }
 
-    private boolean send(Host host, String messageIdentifier, MessageType messageType, Element message) {
+    private boolean send(String queue, String messageIdentifier, MessageType messageType, Element message) {
         AMQP.BasicProperties basicProperties = new AMQP.BasicProperties.Builder()
                 .deliveryMode(DELIVERY_MODE_PERSISTENT)
                 .type(messageType.name())
@@ -73,7 +60,7 @@ public class HostQueueProducer {
 
         try {
             Log.debug("Publishing message to HostQueue");
-            channel.basicPublish(EXCHANGE, host.getName(), basicProperties, elementToBytes(message));
+            rabbitMQService.getChannel().basicPublish(EXCHANGE, queue, basicProperties, elementToBytes(message));
             return true;
         } catch (IOException e) {
             Log.error("Failed to publish message to HostQueue");

@@ -4,7 +4,7 @@ import com.rabbitmq.client.CancelCallback;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DeliverCallback;
 import io.quarkus.logging.Log;
-import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.example.MessageType;
@@ -17,17 +17,19 @@ import org.jboss.logmanager.MDC;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 @ApplicationScoped
 public class HostQueueConsumer {
-
-    private static final String CHANNEL_ID = "consumer";
 
     private final HostStateService hostStateService;
     private final InboundMessageSender inboundMessageSender;
     private final RabbitMQService rabbitMQService;
     private final UICMessageSender uicMessageSender;
-    private Channel channel;
+    private final ExecutorService executorService;
 
     @Inject
     public HostQueueConsumer(
@@ -40,52 +42,65 @@ public class HostQueueConsumer {
         this.inboundMessageSender = inboundMessageSender;
         this.rabbitMQService = rabbitMQService;
         this.uicMessageSender = uicMessageSender;
-    }
 
-    @PostConstruct
-    void init() {
-        MDC.clear();
-        Log.infof("+++++ Initializing %s channel +++++", CHANNEL_ID);
-        channel = rabbitMQService.getChannel(CHANNEL_ID);
-        Log.infof("Successfully initialized %s channel", CHANNEL_ID);
+        ThreadFactory factory = Thread.ofVirtual().name("virtual-sender-", 0).factory();
+        this.executorService = Executors.newThreadPerTaskExecutor(factory);
     }
 
     public void startConsuming(Host host) {
         MDC.put(MDCKeys.HOST_NAME, host.getName());
+        Channel channel = rabbitMQService.getChannel();
+
+        DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+            MDC.put(MDCKeys.HOST_NAME, host.getName());
+            String messageId = delivery.getProperties().getMessageId();
+            String messageType = delivery.getProperties().getType();
+            String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
+            MDC.put(MDCKeys.MESSAGE_ID, messageId);
+            Log.debug("Consumed message from HostQueue");
+
+            CompletableFuture.supplyAsync(() -> {
+                try {
+                    if (messageType.equals(MessageType.UICMessage.name())) {
+                        return uicMessageSender.sendMessage(host, messageId, message);
+                    } else {
+                        return inboundMessageSender.sendMessage(host, message);
+                    }
+                } catch (Exception e) {
+                    Log.error("Error processing message", e);
+                    return false;
+                }
+            }, executorService).thenAccept(success -> {
+                try {
+                    if (success) {
+                        channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                    } else {
+                        channel.basicReject(delivery.getEnvelope().getDeliveryTag(), false);
+                        hostStateService.messageDeliveryFailure(host);
+                    }
+                } catch (IOException e) {
+                    Log.errorf("Failed to acknowledge message: %s", e.getMessage());
+                }
+            });
+        };
+
+        CancelCallback cancelCallback = consumerTag -> {
+            MDC.put(MDCKeys.HOST_NAME, host.getName());
+            Log.warn("Consumer cancelled for queue");
+        };
+
         try {
             channel.queueDeclare(host.getName(), true, false, false, null);
-            channel.basicQos(1);
-
-            DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-                String messageId = delivery.getProperties().getMessageId();
-                String messageType = delivery.getProperties().getType();
-                String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                MDC.put(MDCKeys.MESSAGE_ID, messageId);
-                MDC.put(MDCKeys.HOST_NAME, host.getName());
-                Log.debug("Consumed message from HostQueue");
-
-                boolean success;
-                if (messageType.equals(MessageType.UICMessage.name())) {
-                    success = uicMessageSender.sendMessage(host, messageId, message);
-                } else {
-                    success = inboundMessageSender.sendMessage(host, message);
-                }
-
-                if (success) {
-                    channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                } else {
-                    channel.basicReject(delivery.getEnvelope().getDeliveryTag(), false);
-                    hostStateService.messageDeliveryFailure(host);
-                }
-            };
-
-            CancelCallback cancelCallback = consumerTag -> Log.info("Consumer cancelled for queue");
-
+            channel.basicQos(10);
             channel.basicConsume(host.getName(), false, deliverCallback, cancelCallback);
-
-            Log.info("Started consuming messages");
+            Log.info("Started consuming messages with virtual threads");
         } catch (IOException e) {
-            throw new RuntimeException("Failed to start consuming from queue: " + host.getName(), e);
+            throw new RuntimeException(e);
         }
+    }
+
+    @PreDestroy
+    void destroy() {
+        executorService.close();
     }
 }

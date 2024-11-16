@@ -2,6 +2,7 @@ package org.example.messaging;
 
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.xml.bind.JAXBException;
 import jakarta.xml.ws.BindingProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.example.host.Host;
@@ -15,7 +16,8 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
+import java.util.Map;
 
 @ApplicationScoped
 public class UICMessageSender {
@@ -26,7 +28,7 @@ public class UICMessageSender {
     private final LITechnicalAckBuilder liTechnicalAckBuilder;
     private final XmlUtilityService xmlUtilityService;
     private final String messageLiHost;
-    private final ConcurrentHashMap<Thread, UICReceiveMessage> clientCache = new ConcurrentHashMap<>();
+    private final Map<Host, UICReceiveMessage> clientCache = new HashMap<>();
 
     public UICMessageSender(
             LITechnicalAckBuilder liTechnicalAckBuilder,
@@ -41,8 +43,6 @@ public class UICMessageSender {
     public boolean sendMessage(Host host, String messageIdentifier, String message) {
         Log.debug("Sending message to host");
         UICReceiveMessage client = getOrCreateClient(host);
-        if (client == null) return false;
-
         try {
             UICMessage uicMessage = createUICMessage(message);
             UICMessageResponse response = client.uicMessage(uicMessage, messageIdentifier, messageLiHost, false, false, false);
@@ -53,15 +53,18 @@ public class UICMessageSender {
 
             }
             return true;
-        } catch (Exception e) {
+        } catch (ParserConfigurationException | IOException | SAXException e) {
             // Either bad response or host not reachable
             Log.errorf("Failed to send message: %s", e.getMessage());
+            return false;
+        } catch (JAXBException e) {
+            Log.error("Error unmarshalling response", e);
             return false;
         }
     }
 
     private UICReceiveMessage getOrCreateClient(Host host) {
-        return clientCache.computeIfAbsent(Thread.currentThread(), k -> createClient(host));
+        return clientCache.computeIfAbsent(host, k -> createClient(host));
     }
 
     private UICReceiveMessage createClient(Host host) {

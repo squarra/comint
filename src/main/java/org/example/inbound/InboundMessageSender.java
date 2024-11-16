@@ -11,6 +11,8 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @ApplicationScoped
 public class InboundMessageSender {
@@ -19,20 +21,18 @@ public class InboundMessageSender {
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
 
     private final XmlUtilityService xmlUtilityService;
+    private final Map<Host, InboundConnectorService> clientCache = new HashMap<>();
 
     public InboundMessageSender(XmlUtilityService xmlUtilityService) {
         this.xmlUtilityService = xmlUtilityService;
     }
 
     public boolean sendMessage(Host host, String message) {
-        InboundConnectorService client = createClient(host);
-
+        InboundConnectorService client = getOrCreateClient(host);
         try {
             SendInboundMessage inboundMessage = createInboundMessage(message);
             SendInboundMessageResponse response = client.sendInboundMessage(inboundMessage, "false");
-
             Log.infof("Received response '%s'", response.getResponse());
-
             return true;
         } catch (ParserConfigurationException | IOException | SAXException e) {
             Log.error("Error creating InboundMessage", e);
@@ -41,6 +41,10 @@ public class InboundMessageSender {
             Log.errorf("Failed to send message: %s", e.getMessage());
             return false;
         }
+    }
+
+    private InboundConnectorService getOrCreateClient(Host host) {
+        return clientCache.computeIfAbsent(host, k -> createClient(host));
     }
 
     private InboundConnectorService createClient(Host host) {

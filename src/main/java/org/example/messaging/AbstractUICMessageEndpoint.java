@@ -53,14 +53,14 @@ public abstract class AbstractUICMessageEndpoint implements UICReceiveMessage {
     private boolean processMessage(String messageIdentifier, Element message) {
         try {
             Host host = routingService.findHost(message);
-            return sendMessage(host, messageIdentifier, message);
+            return sendMessage(host.getName(), messageIdentifier, message);
         } catch (HostNotFoundException e) {
             Log.errorf("Failed to find host: %s", e.getMessage());
             return false;
         }
     }
 
-    protected abstract boolean sendMessage(Host host, String messageIdentifier, Element message);
+    protected abstract boolean sendMessage(String queue, String messageIdentifier, Element message);
 
     private UICMessageResponse createUICMessageResponse(Element liTechnicalAck) {
         UICMessageResponse uicMessageResponse = OBJECT_FACTORY.createUICMessageResponse();
