@@ -3,7 +3,7 @@ package org.example.rabbitmq;
 import com.rabbitmq.client.AMQP;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.example.MessageType;
+import org.example.MessageTypes;
 import org.example.host.Host;
 import org.example.util.XmlUtilityService;
 import org.w3c.dom.Element;
@@ -43,17 +43,17 @@ public class HostQueueProducer {
     }
 
     public boolean sendUICMessage(String queue, String messageIdentifier, Element message) {
-        return send(queue, messageIdentifier, MessageType.UICMessage, message);
+        return send(queue, messageIdentifier, MessageTypes.UIC_MESSAGE, message);
     }
 
     public boolean sendInboundMessage(String queue, String messageIdentifier, Element message) {
-        return send(queue, messageIdentifier, MessageType.InboundMessage, message);
+        return send(queue, messageIdentifier, MessageTypes.INBOUND_MESSAGE, message);
     }
 
-    private boolean send(String queue, String messageIdentifier, MessageType messageType, Element message) {
+    private boolean send(String queue, String messageIdentifier, String messageType, Element message) {
         AMQP.BasicProperties basicProperties = new AMQP.BasicProperties.Builder()
                 .deliveryMode(DELIVERY_MODE_PERSISTENT)
-                .type(messageType.name())
+                .type(messageType)
                 .messageId(messageIdentifier)
                 .timestamp(new Date())
                 .build();

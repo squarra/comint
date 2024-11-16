@@ -6,7 +6,6 @@ import org.example.MessageExtractor;
 import org.example.host.Host;
 import org.example.logging.MDCKeys;
 import org.example.rabbitmq.HostQueueProducer;
-import org.example.routing.HostNotFoundException;
 import org.example.routing.RoutingService;
 import org.example.validation.MessageValidationException;
 import org.example.validation.MessageValidator;
@@ -57,12 +56,9 @@ public class OutboundEndpoint implements OutboundConnectorService {
     }
 
     private boolean processMessage(String messageIdentifier, Element message) {
-        try {
-            Host host = routingService.findHost(message);
-            return hostQueueProducer.sendUICMessage(host.getName(), messageIdentifier, message);
-        } catch (HostNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        Host host = routingService.findHost(message);
+        if (host == null) return false;
+        return hostQueueProducer.sendUICMessage(host.getName(), messageIdentifier, message);
     }
 
     private SendOutboundMessageResponse createSendOutboundMessageResponse(boolean success) {

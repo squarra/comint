@@ -4,6 +4,7 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.xml.ws.BindingProvider;
 import jakarta.xml.ws.WebServiceException;
+import org.example.MessageSendException;
 import org.example.host.Host;
 import org.example.util.XmlUtilityService;
 import org.w3c.dom.Document;
@@ -27,19 +28,20 @@ public class InboundMessageSender {
         this.xmlUtilityService = xmlUtilityService;
     }
 
-    public boolean sendMessage(Host host, String message) {
+    public void sendMessage(Host host, String message) throws MessageSendException {
+        Log.debug("Sending message to host");
         InboundConnectorService client = getOrCreateClient(host);
+
         try {
             SendInboundMessage inboundMessage = createInboundMessage(message);
             SendInboundMessageResponse response = client.sendInboundMessage(inboundMessage, "false");
-            Log.infof("Received response '%s'", response.getResponse());
-            return true;
+            if (!response.getResponse().equals("success")) {
+                throw new MessageSendException(MessageSendException.FailureType.MESSAGE_REJECTED);
+            }
         } catch (ParserConfigurationException | IOException | SAXException e) {
-            Log.error("Error creating InboundMessage", e);
-            return false;
+            throw new MessageSendException(MessageSendException.FailureType.REQUEST_CREATION_ERROR);
         } catch (WebServiceException e) {
-            Log.errorf("Failed to send message: %s", e.getMessage());
-            return false;
+            throw new MessageSendException(MessageSendException.FailureType.HOST_UNREACHABLE);
         }
     }
 

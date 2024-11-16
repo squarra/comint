@@ -5,7 +5,6 @@ import jakarta.jws.WebService;
 import org.example.host.Host;
 import org.example.logging.MDCKeys;
 import org.example.messaging.ack.LITechnicalAckBuilder;
-import org.example.routing.HostNotFoundException;
 import org.example.routing.RoutingService;
 import org.example.validation.MessageValidationException;
 import org.example.validation.MessageValidator;
@@ -51,13 +50,9 @@ public abstract class AbstractUICMessageEndpoint implements UICReceiveMessage {
     }
 
     private boolean processMessage(String messageIdentifier, Element message) {
-        try {
-            Host host = routingService.findHost(message);
-            return sendMessage(host.getName(), messageIdentifier, message);
-        } catch (HostNotFoundException e) {
-            Log.errorf("Failed to find host: %s", e.getMessage());
-            return false;
-        }
+        Host host = routingService.findHost(message);
+        if (host == null) return false;
+        return sendMessage(host.getName(), messageIdentifier, message);
     }
 
     protected abstract boolean sendMessage(String queue, String messageIdentifier, Element message);

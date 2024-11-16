@@ -1,5 +1,6 @@
 package org.example.routing;
 
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.example.MessageExtractor;
 import org.example.host.Host;
@@ -29,16 +30,18 @@ public class RoutingService {
         this.messageExtractor = messageExtractor;
     }
 
-    public Host findHost(Element message) throws HostNotFoundException {
+    public Host findHost(Element message) {
         RoutingCriteria routingCriteria = messageExtractor.extractRoutingCriteria(message);
         String destination = getDestination(routingCriteria);
         if (destination == null) {
-            throw new HostNotFoundException("Failed to find destination in routes");
+            Log.errorf("Failed to find destination for %s", routingCriteria.toString());
+            return null;
         }
 
         Optional<Host> host = hostService.getHost(destination);
         if (host.isEmpty()) {
-            throw new HostNotFoundException("Failed to find host for " + destination);
+            Log.errorf("Failed to find host for destination '%s'", destination);
+            return null;
         }
 
         MDC.put(MDCKeys.HOST_NAME, host.get().getName());

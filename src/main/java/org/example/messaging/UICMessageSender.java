@@ -4,7 +4,9 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.ws.BindingProvider;
+import jakarta.xml.ws.WebServiceException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.example.MessageSendException;
 import org.example.host.Host;
 import org.example.messaging.ack.LITechnicalAck;
 import org.example.messaging.ack.LITechnicalAckBuilder;
@@ -40,26 +42,24 @@ public class UICMessageSender {
         this.messageLiHost = messageLiHost;
     }
 
-    public boolean sendMessage(Host host, String messageIdentifier, String message) {
+    public void sendMessage(Host host, String messageIdentifier, String message) throws MessageSendException {
         Log.debug("Sending message to host");
         UICReceiveMessage client = getOrCreateClient(host);
+
         try {
             UICMessage uicMessage = createUICMessage(message);
             UICMessageResponse response = client.uicMessage(uicMessage, messageIdentifier, messageLiHost, false, false, false);
 
             LITechnicalAck liTechnicalAck = liTechnicalAckBuilder.unmarshal((Node) response.getReturn());
             if (!(liTechnicalAck.getResponseStatus().equals("ACK"))) {
-                Log.warnf("Received LITechnicalAck with responseStatus '%s'", liTechnicalAck.getResponseStatus());
-
+                throw new MessageSendException(MessageSendException.FailureType.MESSAGE_REJECTED);
             }
-            return true;
         } catch (ParserConfigurationException | IOException | SAXException e) {
-            // Either bad response or host not reachable
-            Log.errorf("Failed to send message: %s", e.getMessage());
-            return false;
+            throw new MessageSendException(MessageSendException.FailureType.REQUEST_CREATION_ERROR, e);
+        } catch (WebServiceException e) {
+            throw new MessageSendException(MessageSendException.FailureType.HOST_UNREACHABLE);
         } catch (JAXBException e) {
-            Log.error("Error unmarshalling response", e);
-            return false;
+            throw new MessageSendException(MessageSendException.FailureType.RESPONSE_PROCESSING_ERROR, e);
         }
     }
 

@@ -11,15 +11,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logmanager.MDC;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 @ApplicationScoped
 public class RabbitMQService {
 
     private final ConnectionFactory connectionFactory;
-    private final Map<String, Channel> channels = new HashMap<>();
     private Connection connection;
     private Channel channel;
 
@@ -46,19 +43,16 @@ public class RabbitMQService {
 
     @PreDestroy
     void destroy() {
-        closeAllChannels();
+        closeChannel();
         closeConnection();
     }
 
-    private void closeAllChannels() {
-        channels.forEach((key, channel) -> {
-            try {
-                if (channel.isOpen()) channel.close();
-            } catch (IOException | TimeoutException e) {
-                Log.error(e);
-            }
-        });
-        channels.clear();
+    private void closeChannel() {
+        try {
+            if (channel.isOpen()) channel.close();
+        } catch (TimeoutException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void closeConnection() {
