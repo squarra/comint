@@ -70,10 +70,11 @@ public class HostQueueConsumer implements Consumer {
             DocumentBuilder documentBuilder = xmlUtilityService.createDocumentBuilder();
             ByteArrayInputStream input = new ByteArrayInputStream(bytes);
             Document document = documentBuilder.parse(input);
+            String endpoint = host.getUrl() + host.getMessagingEndpoint();
 
             switch (messageType) {
-                case MessageTypes.UIC_MESSAGE -> uicMessageSender.sendMessage(host, messageId, document);
-                case MessageTypes.INBOUND_MESSAGE -> inboundMessageSender.sendMessage(host, document);
+                case MessageTypes.UIC_MESSAGE -> uicMessageSender.sendMessage(endpoint, messageId, document);
+                case MessageTypes.INBOUND_MESSAGE -> inboundMessageSender.sendMessage(endpoint, document);
             }
             rabbitMQService.ack(deliveryTag);
         } catch (MessageSendException e) {

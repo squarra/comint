@@ -7,7 +7,6 @@ import jakarta.xml.ws.BindingProvider;
 import jakarta.xml.ws.WebServiceException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.example.MessageSendException;
-import org.example.host.Host;
 import org.example.messaging.ack.LITechnicalAck;
 import org.example.messaging.ack.LITechnicalAckBuilder;
 import org.w3c.dom.Document;
@@ -28,7 +27,7 @@ public class UICMessageSender {
 
     private final LITechnicalAckBuilder liTechnicalAckBuilder;
     private final String messageLiHost;
-    private final Map<Host, UICReceiveMessage> clientCache = new HashMap<>();
+    private final Map<String, UICReceiveMessage> clientCache = new HashMap<>();
 
     public UICMessageSender(
             LITechnicalAckBuilder liTechnicalAckBuilder,
@@ -38,9 +37,9 @@ public class UICMessageSender {
         this.messageLiHost = messageLiHost;
     }
 
-    public void sendMessage(Host host, String messageIdentifier, Document message) throws MessageSendException {
-        Log.debug("Sending message to host");
-        UICReceiveMessage client = getOrCreateClient(host);
+    public void sendMessage(String endpoint, String messageIdentifier, Document message) throws MessageSendException {
+        Log.debugf("Sending message to %s", endpoint);
+        UICReceiveMessage client = getOrCreateClient(endpoint);
 
         try {
             UICMessage uicMessage = createUICMessage(message);
@@ -50,26 +49,25 @@ public class UICMessageSender {
             if (!(liTechnicalAck.getResponseStatus().equalsIgnoreCase(ACK))) {
                 throw new MessageSendException(MessageSendException.FailureType.MESSAGE_REJECTED);
             }
+            Log.infof("Received LITechnicalAck with responseStatus: %s", liTechnicalAck.getResponseStatus());
         } catch (ParserConfigurationException | IOException | SAXException e) {
             throw new MessageSendException(MessageSendException.FailureType.REQUEST_CREATION_ERROR, e);
         } catch (WebServiceException e) {
+            Log.error(e);
             throw new MessageSendException(MessageSendException.FailureType.HOST_UNREACHABLE);
         } catch (JAXBException e) {
             throw new MessageSendException(MessageSendException.FailureType.RESPONSE_PROCESSING_ERROR, e);
         }
     }
 
-    private UICReceiveMessage getOrCreateClient(Host host) {
-        return clientCache.computeIfAbsent(host, k -> createClient(host));
+    private UICReceiveMessage getOrCreateClient(String endpoint) {
+        return clientCache.computeIfAbsent(endpoint, k -> createClient(endpoint));
     }
 
-    private UICReceiveMessage createClient(Host host) {
+    private UICReceiveMessage createClient(String endpoint) {
         UICReceiveMessage client = MESSAGE_SERVICE.getUICReceiveMessagePort();
         BindingProvider bindingProvider = (BindingProvider) client;
-
-        String url = host.getUrl() + host.getMessagingEndpoint();
-        bindingProvider.getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
-
+        bindingProvider.getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, endpoint);
         return client;
     }
 

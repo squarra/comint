@@ -16,7 +16,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.StringWriter;
 
-public class TestMessageBuilder {
+public class MessageBuilder {
 
     private final Document document;
     private final String version;
@@ -31,7 +31,7 @@ public class TestMessageBuilder {
     private Element recipient;
 
 
-    public TestMessageBuilder(String root, String version) {
+    public MessageBuilder(String root, String version) {
         this.version = version;
         this.namespace = "http://www.era.europa.eu/schemes/TAFTSI/" + version.substring(0, 3);
 
@@ -50,48 +50,48 @@ public class TestMessageBuilder {
         addDefaultMessageHeader();
     }
 
-    public TestMessageBuilder element(String name) {
+    public MessageBuilder element(String name) {
         Element element = createElement(name);
         currentElement.appendChild(element);
         currentElement = element;
         return this;
     }
 
-    public TestMessageBuilder text(String name, String value) {
+    public MessageBuilder text(String name, String value) {
         currentElement.appendChild(createTextElement(name, value));
         return this;
     }
 
-    public TestMessageBuilder attribute(String name, String value) {
+    public MessageBuilder attribute(String name, String value) {
         currentElement.setAttributeNS(namespace, name, value);
         return this;
     }
 
-    public TestMessageBuilder messageType(String value) {
+    public MessageBuilder messageType(String value) {
         return setElementText(messageType, value);
     }
 
-    public TestMessageBuilder messageTypeVersion(String value) {
+    public MessageBuilder messageTypeVersion(String value) {
         return setElementText(messageTypeVersion, value);
     }
 
-    public TestMessageBuilder messageIdentifier(String value) {
+    public MessageBuilder messageIdentifier(String value) {
         return setElementText(messageIdentifier, value);
     }
 
-    public TestMessageBuilder messageDateTime(String value) {
+    public MessageBuilder messageDateTime(String value) {
         return setElementText(messageDateTime, value);
     }
 
-    public TestMessageBuilder sender(String value) {
+    public MessageBuilder sender(String value) {
         return setElementText(sender, value);
     }
 
-    public TestMessageBuilder recipient(String value) {
+    public MessageBuilder recipient(String value) {
         return setElementText(recipient, value);
     }
 
-    public TestMessageBuilder up() {
+    public MessageBuilder up() {
         Node parent = currentElement.getParentNode();
         if (parent instanceof Element) {
             currentElement = (Element) parent;
@@ -99,7 +99,7 @@ public class TestMessageBuilder {
         return this;
     }
 
-    public TestMessageBuilder navigateToElement(String name) {
+    public MessageBuilder navigateToElement(String name) {
         NodeList nodeList = document.getElementsByTagNameNS(namespace, name);
         if (nodeList.getLength() > 0) {
             currentElement = (Element) nodeList.item(0);
@@ -107,7 +107,7 @@ public class TestMessageBuilder {
         return this;
     }
 
-    public TestMessageBuilder remove() {
+    public MessageBuilder remove() {
         if (currentElement != rootElement) {
             Node parent = currentElement.getParentNode();
             parent.removeChild(currentElement);
@@ -116,7 +116,7 @@ public class TestMessageBuilder {
         return this;
     }
 
-    public TestMessageBuilder rename(String newName) {
+    public MessageBuilder rename(String newName) {
         Element newElement = document.createElementNS(namespace, newName);
         while (currentElement.hasChildNodes()) {
             newElement.appendChild(currentElement.getFirstChild());
@@ -127,7 +127,7 @@ public class TestMessageBuilder {
         return this;
     }
 
-    public TestMessageBuilder wrap(String name) {
+    public MessageBuilder wrap(String name) {
         Element element = document.createElement(name);
         document.removeChild(rootElement);
         document.appendChild(element);
@@ -136,7 +136,7 @@ public class TestMessageBuilder {
         return this;
     }
 
-    private TestMessageBuilder setElementText(Element element, String value) {
+    private MessageBuilder setElementText(Element element, String value) {
         element.getFirstChild().setNodeValue(value);
         return this;
     }

@@ -14,8 +14,8 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.16.2</quarkus.platform.version>
-        <skipITs>true</skipITs>
         <surefire-plugin.version>3.5.0</surefire-plugin.version>
+        <testcontainer.version>1.20.4</testcontainer.version>
     </properties>
 
     <dependencyManagement>
@@ -80,6 +80,24 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest</artifactId>
             <version>3.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainer.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainer.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>rabbitmq</artifactId>
+            <version>${testcontainer.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -200,22 +218,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>default</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <groups>!requires-rabbitmq</groups>
-            </properties>
-        </profile>
-        <profile>
-            <id>rabbitmq-tests</id>
-            <properties>
-                <groups>all</groups>
-            </properties>
-        </profile>
-    </profiles>
 </project>

@@ -5,7 +5,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.xml.ws.BindingProvider;
 import jakarta.xml.ws.WebServiceException;
 import org.example.MessageSendException;
-import org.example.host.Host;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -22,11 +21,11 @@ public class InboundMessageSender {
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
     private static final String SUCCESS_MESSAGE = "success";
 
-    private final Map<Host, InboundConnectorService> clientCache = new HashMap<>();
+    private final Map<String, InboundConnectorService> clientCache = new HashMap<>();
 
-    public void sendMessage(Host host, Document message) throws MessageSendException {
-        Log.debug("Sending message to host");
-        InboundConnectorService client = getOrCreateClient(host);
+    public void sendMessage(String endpoint, Document message) throws MessageSendException {
+        Log.debugf("Sending message to %s", endpoint);
+        InboundConnectorService client = getOrCreateClient(endpoint);
 
         try {
             SendInboundMessage inboundMessage = createInboundMessage(message);
@@ -47,17 +46,14 @@ public class InboundMessageSender {
         }
     }
 
-    private InboundConnectorService getOrCreateClient(Host host) {
-        return clientCache.computeIfAbsent(host, k -> createClient(host));
+    private InboundConnectorService getOrCreateClient(String endpoint) {
+        return clientCache.computeIfAbsent(endpoint, k -> createClient(endpoint));
     }
 
-    private InboundConnectorService createClient(Host host) {
+    private InboundConnectorService createClient(String endpoint) {
         InboundConnectorService client = INBOUND_SERVICE.getInboundConnectorServicePort();
         BindingProvider bindingProvider = (BindingProvider) client;
-
-        String url = host.getUrl() + host.getMessagingEndpoint();
-        bindingProvider.getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
-
+        bindingProvider.getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, endpoint);
         return client;
     }
 

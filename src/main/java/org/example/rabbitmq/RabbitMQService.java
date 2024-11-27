@@ -21,8 +21,12 @@ public class RabbitMQService {
     private Connection connection;
     private Channel channel;
 
-    public RabbitMQService(@ConfigProperty(name = "rabbitmq.host", defaultValue = "localhost") String host) {
+    public RabbitMQService(
+            @ConfigProperty(name = "rabbitmq.host", defaultValue = "localhost") String host,
+            @ConfigProperty(name = "rabbitmq.port", defaultValue = "5672") int port
+    ) {
         CONNECTION_FACTORY.setHost(host);
+        CONNECTION_FACTORY.setPort(port);
         CONNECTION_FACTORY.setAutomaticRecoveryEnabled(true);
         CONNECTION_FACTORY.setTopologyRecoveryEnabled(true);
         CONNECTION_FACTORY.setNetworkRecoveryInterval(5000);

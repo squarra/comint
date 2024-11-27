@@ -52,6 +52,5 @@ public class MessageValidator {
         } catch (IOException | SAXException e) {
             throw new MessageValidationException(e.getMessage());
         }
-
     }
 }
