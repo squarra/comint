@@ -6,7 +6,6 @@ import org.example.MessageExtractor;
 import org.example.XmlSchemaService;
 import org.example.util.XmlUtils;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.dom.DOMSource;
@@ -29,19 +28,10 @@ public class MessageValidator {
         this.xmlSchemaService = xmlSchemaService;
     }
 
-    public Element validateMessage(Object message) throws MessageValidationException {
+    public void validateMessage(Element message) throws MessageValidationException {
         Log.debug("Validating message");
 
-        if (!(message instanceof Node node)) {
-            throw new MessageValidationException("Message not a node");
-        }
-
-        if (node.getNodeType() != Node.ELEMENT_NODE) {
-            throw new MessageValidationException("Message not a Element node");
-        }
-
-        Element element = (Element) node;
-        List<Element> elementChildNodes = XmlUtils.getElementChildNodes(element);
+        List<Element> elementChildNodes = XmlUtils.getElementChildNodes(message);
         if (elementChildNodes.size() != 1) {
             throw new MessageValidationException("Size not 1");
         }
@@ -63,6 +53,5 @@ public class MessageValidator {
             throw new MessageValidationException(e.getMessage());
         }
 
-        return tafTapTsiMessage;
     }
 }

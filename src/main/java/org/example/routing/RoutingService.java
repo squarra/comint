@@ -5,7 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.example.MessageExtractor;
 import org.example.host.Host;
 import org.example.host.HostService;
-import org.example.logging.MDCKeys;
+import org.example.logging.MdcKeys;
 import org.example.util.CsvFileReader;
 import org.jboss.logmanager.MDC;
 import org.w3c.dom.Element;
@@ -32,6 +32,8 @@ public class RoutingService {
 
     public Host findHost(Element message) {
         RoutingCriteria routingCriteria = messageExtractor.extractRoutingCriteria(message);
+        Log.debug(routingCriteria);
+
         String destination = getDestination(routingCriteria);
         if (destination == null) {
             Log.errorf("Failed to find destination for %s", routingCriteria.toString());
@@ -44,7 +46,7 @@ public class RoutingService {
             return null;
         }
 
-        MDC.put(MDCKeys.HOST_NAME, host.get().getName());
+        MDC.put(MdcKeys.HOST_NAME, host.get().getName());
         return host.get();
     }
 

@@ -58,4 +58,9 @@ public class Host {
     public void setHeartbeatInterval(int heartbeatInterval) {
         this.heartbeatInterval = heartbeatInterval;
     }
+
+    @Override
+    public String toString() {
+        return "Host{name=" + name + ", url=" + url + ", messagingEndpoint=" + messagingEndpoint + ", heartbeatEndpoint=" + heartbeatEndpoint + ", heartbeatInterval=" + heartbeatInterval + '}';
+    }
 }

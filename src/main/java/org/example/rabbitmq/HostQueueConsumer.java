@@ -1,11 +1,10 @@
 package org.example.rabbitmq;
 
-import com.rabbitmq.client.CancelCallback;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.DeliverCallback;
-import com.rabbitmq.client.Delivery;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.ShutdownSignalException;
 import io.quarkus.logging.Log;
-import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.example.MessageSendException;
@@ -13,118 +12,128 @@ import org.example.MessageTypes;
 import org.example.host.Host;
 import org.example.host.HostStateService;
 import org.example.inbound.InboundMessageSender;
-import org.example.logging.MDCKeys;
+import org.example.logging.MdcKeys;
 import org.example.messaging.UICMessageSender;
+import org.example.util.XmlUtilityService;
 import org.jboss.logmanager.MDC;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
-public class HostQueueConsumer {
+public class HostQueueConsumer implements Consumer {
 
     private final HostStateService hostStateService;
     private final InboundMessageSender inboundMessageSender;
+    private final RabbitMQService rabbitMQService;
     private final UICMessageSender uicMessageSender;
-    private final ExecutorService executorService;
-    private final Channel channel;
+    private final Map<String, Host> hostsByConsumerTags = new ConcurrentHashMap<>();
+    private final XmlUtilityService xmlUtilityService;
 
     @Inject
     public HostQueueConsumer(
             HostStateService hostStateService,
             InboundMessageSender inboundMessageSender,
             RabbitMQService rabbitMQService,
-            UICMessageSender uicMessageSender
+            UICMessageSender uicMessageSender,
+            XmlUtilityService xmlUtilityService
     ) {
         this.hostStateService = hostStateService;
         this.inboundMessageSender = inboundMessageSender;
+        this.rabbitMQService = rabbitMQService;
         this.uicMessageSender = uicMessageSender;
-        this.channel = rabbitMQService.getChannel();
-
-        ThreadFactory factory = Thread.ofVirtual().name("virtual-sender-", 0).factory();
-        this.executorService = Executors.newThreadPerTaskExecutor(factory);
+        this.xmlUtilityService = xmlUtilityService;
     }
 
     public void startConsuming(Host host) {
-        MDC.put(MDCKeys.HOST_NAME, host.getName());
+        String consumerTag = rabbitMQService.consume(host.getName(), this);
+        hostsByConsumerTags.put(consumerTag, host);
+    }
 
-        DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-            MDC.put(MDCKeys.HOST_NAME, host.getName());
-            String messageId = delivery.getProperties().getMessageId();
-            String messageType = delivery.getProperties().getType();
-            String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-            MDC.put(MDCKeys.MESSAGE_ID, messageId);
-
-            CompletableFuture.runAsync(() -> processMessage(consumerTag, delivery, host, messageId, messageType, message), executorService)
-                    .exceptionally(e -> {
-                        Log.error("Unhandled exception during message processing", e);
-                        return null;
-                    });
-        };
-
-        CancelCallback cancelCallback = consumerTag -> {
-            MDC.put(MDCKeys.HOST_NAME, host.getName());
-            Log.warn("Consumer cancelled for queue");
-        };
+    @Override
+    public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties basicProperties, byte[] bytes) {
+        long deliveryTag = envelope.getDeliveryTag();
+        String messageType = basicProperties.getType();
+        String messageId = basicProperties.getMessageId();
+        Host host = hostsByConsumerTags.get(consumerTag);
+        MDC.put(MdcKeys.HOST_NAME, host.getName());
+        MDC.put(MdcKeys.MESSAGE_ID, messageId);
+        Log.info("Handling delivery");
 
         try {
-            channel.queueDeclare(host.getName(), true, false, false, null);
-            channel.basicQos(10);
-            channel.basicConsume(host.getName(), false, deliverCallback, cancelCallback);
-            Log.info("Started consuming messages with virtual threads");
-        } catch (IOException e) {
+            DocumentBuilder documentBuilder = xmlUtilityService.createDocumentBuilder();
+            ByteArrayInputStream input = new ByteArrayInputStream(bytes);
+            Document document = documentBuilder.parse(input);
+
+            switch (messageType) {
+                case MessageTypes.UIC_MESSAGE -> uicMessageSender.sendMessage(host, messageId, document);
+                case MessageTypes.INBOUND_MESSAGE -> inboundMessageSender.sendMessage(host, document);
+            }
+            rabbitMQService.ack(deliveryTag);
+        } catch (MessageSendException e) {
+            handleSendException(deliveryTag, host, e);
+        } catch (ParserConfigurationException | IOException | SAXException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void processMessage(String consumerTag, Delivery delivery, Host host, String messageId, String messageType, String message) {
-        Log.debug("Processing message");
-        try {
-            switch (messageType) {
-                case MessageTypes.UIC_MESSAGE -> uicMessageSender.sendMessage(host, messageId, message);
-                case MessageTypes.INBOUND_MESSAGE -> inboundMessageSender.sendMessage(host, message);
-                default -> throw new RuntimeException("Unknown message type: " + messageType);
+    private void handleSendException(long deliveryTag, Host host, MessageSendException e) {
+        switch (e.getFailureType()) {
+            case REQUEST_CREATION_ERROR -> {
+                Log.error("Failed to create request. Deleting message from queue", e);
+                rabbitMQService.reject(deliveryTag);
             }
-            channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-        } catch (MessageSendException e) {
-            handleSendException(consumerTag, delivery, host, e);
-        } catch (IOException e) {
-            Log.errorf("Failed to acknowledge message: %s", e.getMessage());
+            case HOST_UNREACHABLE -> {
+                hostStateService.messageDeliveryFailure(host);
+                Log.error("Failed to deliver message. Host unreachable.");
+                rabbitMQService.nack(deliveryTag);
+            }
+            case RESPONSE_PROCESSING_ERROR, MESSAGE_REJECTED -> {
+                Log.error("Message was delivered but there was a processing issue");
+                rabbitMQService.reject(deliveryTag);
+            }
         }
     }
 
-    private void handleSendException(String consumerTag, Delivery delivery, Host host, MessageSendException e) {
-        try {
-            switch (e.getFailureType()) {
-                case REQUEST_CREATION_ERROR -> {
-                    Log.error("Failed to create request. Deleting message from queue", e);
-                    channel.basicReject(delivery.getEnvelope().getDeliveryTag(), false);
-                }
-                case HOST_UNREACHABLE -> {
-                    hostStateService.messageDeliveryFailure(host);
-                    Log.error("Failed to deliver message. Host unreachable.");
-                    channel.basicNack(delivery.getEnvelope().getDeliveryTag(), false, false);
-                    Log.warn("Cancelling consumer for queue: " + host.getName());
-                    channel.basicCancel(consumerTag);
-                }
-                case RESPONSE_PROCESSING_ERROR, MESSAGE_REJECTED -> {
-                    Log.error("Message was delivered but there was a processing issue", e);
-                    channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                }
-            }
-        } catch (IOException ex) {
-            Log.error("Failed to handle message send exception", ex);
-            throw new RuntimeException(ex);
+    @Override
+    public void handleConsumeOk(String consumerTag) {
+        Log.infof("Consumer registered successfully with tag: %s", consumerTag);
+    }
+
+    @Override
+    public void handleCancelOk(String consumerTag) {
+        Host host = hostsByConsumerTags.remove(consumerTag);
+        if (host != null) {
+            Log.infof("Consumer cancelled for host: %s", host.getName());
         }
     }
 
-    @PreDestroy
-    void destroy() {
-        Log.info("Closing executorService");
-        executorService.close();
+    @Override
+    public void handleCancel(String consumerTag) {
+        Host host = hostsByConsumerTags.remove(consumerTag);
+        if (host != null) {
+            Log.warnf("Consumer externally cancelled for host: ", host.getName());
+            // startConsuming(host);
+        }
+    }
+
+    @Override
+    public void handleShutdownSignal(String consumerTag, ShutdownSignalException e) {
+        Log.errorf("Shutdown signal received for consumer: %s", consumerTag);
+        Host host = hostsByConsumerTags.get(consumerTag);
+        if (host != null) {
+            Log.errorf("Removed %s from active consumers", host.getName());
+        }
+    }
+
+    @Override
+    public void handleRecoverOk(String consumerTag) {
+        Log.info("Recover ok");
     }
 }

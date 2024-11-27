@@ -8,11 +8,11 @@ import org.example.validation.MessageValidator;
 import org.w3c.dom.Element;
 
 @WebService(endpointInterface = "org.example.messaging.UICReceiveMessage")
-public class UICMessageEndpoint extends AbstractUICMessageEndpoint implements UICReceiveMessage {
+public class ExternalEndpoint extends AbstractUICMessageEndpoint implements UICReceiveMessage {
 
     private final HostQueueProducer hostQueueProducer;
 
-    public UICMessageEndpoint(
+    public ExternalEndpoint(
             HostQueueProducer hostQueueProducer,
             LITechnicalAckBuilder liTechnicalAckBuilder,
             MessageValidator messageValidator,

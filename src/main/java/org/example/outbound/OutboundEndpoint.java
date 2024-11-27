@@ -4,10 +4,9 @@ import io.quarkus.logging.Log;
 import jakarta.jws.WebService;
 import org.example.MessageExtractor;
 import org.example.host.Host;
-import org.example.logging.MDCKeys;
+import org.example.logging.MdcKeys;
 import org.example.rabbitmq.HostQueueProducer;
 import org.example.routing.RoutingService;
-import org.example.validation.MessageValidationException;
 import org.example.validation.MessageValidator;
 import org.jboss.logmanager.MDC;
 import org.w3c.dom.Element;
@@ -38,32 +37,32 @@ public class OutboundEndpoint implements OutboundConnectorService {
 
     @Override
     public SendOutboundMessageResponse sendOutboundMessage(SendOutboundMessage parameters, String encoded) {
-        Object message = parameters.getMessage();
-        String messageIdentifier = messageExtractor.extractMessageIdentifier(message);
-        MDC.put(MDCKeys.MESSAGE_ID, messageIdentifier);
-        Element tafTapTsiMessage = validateOrThrow(message);
-        boolean success = processMessage(messageIdentifier, tafTapTsiMessage);
-        return createSendOutboundMessageResponse(success);
-    }
-
-    private Element validateOrThrow(Object message) {
         try {
-            return messageValidator.validateMessage(message);
-        } catch (MessageValidationException e) {
-            Log.errorf("Failed to validate message: %s", e.getMessage());
-            throw new RuntimeException(e.getMessage());
+            Element message = (Element) parameters.getMessage();
+            String messageIdentifier = messageExtractor.extractMessageIdentifier(message);
+            MDC.put(MdcKeys.MESSAGE_ID, messageIdentifier);
+            Log.debug("Received message");
+
+            messageValidator.validateMessage(message);
+            String responseMessage = processMessage(messageIdentifier, message);
+            return createSendOutboundMessageResponse(responseMessage);
+        } catch (Exception e) {
+            Log.error(e);
+            return createSendOutboundMessageResponse(ERROR_MESSAGE);
         }
     }
 
-    private boolean processMessage(String messageIdentifier, Element message) {
+    private String processMessage(String messageIdentifier, Element message) {
         Host host = routingService.findHost(message);
-        if (host == null) return false;
-        return hostQueueProducer.sendUICMessage(host.getName(), messageIdentifier, message);
+        if (host == null) return ERROR_MESSAGE;
+
+        boolean success = hostQueueProducer.sendUICMessage(host.getName(), messageIdentifier, message);
+        return success ? SUCCESS_MESSAGE : ERROR_MESSAGE;
     }
 
-    private SendOutboundMessageResponse createSendOutboundMessageResponse(boolean success) {
+    private SendOutboundMessageResponse createSendOutboundMessageResponse(String responseMessage) {
         SendOutboundMessageResponse response = OBJECT_FACTORY.createSendOutboundMessageResponse();
-        response.setResponse(success ? SUCCESS_MESSAGE : ERROR_MESSAGE);
+        response.setResponse(responseMessage);
         return response;
     }
 }

@@ -1,57 +1,56 @@
 package org.example.host;
 
 import io.quarkus.logging.Log;
-import io.quarkus.runtime.StartupEvent;
+import io.quarkus.runtime.Startup;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import org.example.logging.MdcKeys;
 import org.example.rabbitmq.HostQueueConsumer;
-import org.example.rabbitmq.HostQueueProducer;
 import org.example.util.CsvFileReader;
 import org.jboss.logmanager.MDC;
 
 import java.util.List;
 import java.util.Optional;
 
+@Startup
 @ApplicationScoped
 public class HostService {
 
     private static final String HOSTS_FILE = "hosts.csv";
 
     private final HostStateService hostStateService;
-    private final HostQueueProducer hostQueueProducer;
     private final HostQueueConsumer hostQueueConsumer;
     private final HeartbeatScheduler heartbeatScheduler;
-    private final List<Host> hosts;
+    private final List<Host> hosts = CsvFileReader.readFile(HOSTS_FILE, Host.class);
 
     @Inject
     public HostService(
             HostStateService hostStateService,
-            HostQueueProducer hostQueueProducer,
             HostQueueConsumer hostQueueConsumer,
             HeartbeatScheduler heartbeatScheduler
     ) {
         this.hostStateService = hostStateService;
-        this.hostQueueProducer = hostQueueProducer;
         this.hostQueueConsumer = hostQueueConsumer;
         this.heartbeatScheduler = heartbeatScheduler;
-        this.hosts = CsvFileReader.readFile(HOSTS_FILE, Host.class);
     }
 
-    void onStart(@Observes StartupEvent ev) {
-        MDC.clear();
-        Log.info("***** Initializing hosts *****");
+    @PostConstruct
+    void init() {
         initializeHosts();
-        MDC.clear();
     }
 
     private void initializeHosts() {
-        hosts.forEach(host -> {
-            hostStateService.initializeHostState(host);
-            hostQueueProducer.initializeHostQueue(host);
-            hostQueueConsumer.startConsuming(host);
-            if (host.getHeartbeatInterval() != 0) heartbeatScheduler.scheduleHeartbeat(host);
-        });
+        Log.info("***** Initializing hosts *****");
+        hosts.forEach(this::initializeHost);
+    }
+
+    private void initializeHost(Host host) {
+        MDC.put(MdcKeys.HOST_NAME, host.getName());
+        Log.info(host);
+        hostStateService.initializeHostState(host);
+        hostQueueConsumer.startConsuming(host);
+        if (host.getHeartbeatInterval() != 0) heartbeatScheduler.scheduleHeartbeat(host);
     }
 
     public Optional<Host> getHost(String name) {

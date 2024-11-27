@@ -14,7 +14,7 @@ import static io.restassured.RestAssured.given;
 
 @Tag("requires-rabbitmq")
 @QuarkusTest
-class UICMessageEndpointTest {
+class ExternalEndpointTest {
 
     private static final String ENDPOINT = "/LIMessageProcessing/http/UICCCMessageProcessing/UICCCMessageProcessingInboundWS";
 

@@ -51,10 +51,18 @@ public class LITechnicalAckBuilder {
         this.remoteLIInstanceNumber = remoteLIInstanceNumber;
     }
 
-    public Element build(String messageIdentifier, boolean success, Node message) {
+    public Element createAck(String messageIdentifier, Element message) {
+        return createLITechnicalAck(messageIdentifier, message, "ACK");
+    }
+
+    public Element createNack(String messageIdentifier, Element message) {
+        return createLITechnicalAck(messageIdentifier, message, "NACK");
+    }
+
+    private Element createLITechnicalAck(String messageIdentifier, Element message, String responseStatus) {
         LITechnicalAck liTechnicalAck = OBJECT_FACTORY.createLITechnicalAck();
         liTechnicalAck.setAckIndentifier("ACKID" + messageIdentifier);
-        liTechnicalAck.setResponseStatus(success ? "ACK" : "NACK");
+        liTechnicalAck.setResponseStatus(responseStatus);
         liTechnicalAck.setMessageReference(createMessageReference(message));
         liTechnicalAck.setSender(messageExtractor.extractSender(message));
         liTechnicalAck.setRecipient(messageExtractor.extractRecipient(message));

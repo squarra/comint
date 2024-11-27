@@ -1,11 +1,10 @@
 package org.example;
 
 import io.quarkus.logging.Log;
-import io.quarkus.runtime.StartupEvent;
+import io.quarkus.runtime.Startup;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
 import org.example.util.XmlUtilityService;
-import org.jboss.logmanager.MDC;
 import org.xml.sax.SAXException;
 
 import javax.xml.validation.Schema;
@@ -16,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@Startup
 @ApplicationScoped
 public class XmlSchemaService {
 
@@ -32,27 +32,25 @@ public class XmlSchemaService {
         this.xmlUtilityService = xmlUtilityService;
     }
 
-    void onStart(@Observes StartupEvent event) {
-        MDC.clear();
-        Log.info("***** Loading schemas *****");
+    @PostConstruct
+    void init() {
         loadSchemas();
-        MDC.clear();
     }
 
     private void loadSchemas() {
+        Log.info("***** Loading schemas *****");
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         SCHEMA_FILES.forEach(schemaFile -> loadSchema(schemaFile, classLoader));
     }
 
     private void loadSchema(String schemaFile, ClassLoader classLoader) {
-        MDC.put("schemaFile", schemaFile);
-        Log.debug("Loading schema");
+        Log.debugf("Loading schema file %s", schemaFile);
         try (InputStream schemaStream = classLoader.getResourceAsStream(SCHEMA_DIRECTORY + schemaFile)) {
             String version = normalize(extractVersion(schemaFile));
             Schema schema = xmlUtilityService.createSchema(schemaStream);
             version2Schema.put(version, schema);
         } catch (IOException | SAXException e) {
-            Log.error("Error loading schema", e);
+            Log.errorf(e, "Error loading schema file %s", schemaFile);
         }
     }
 

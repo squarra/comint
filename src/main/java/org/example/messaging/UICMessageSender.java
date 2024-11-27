@@ -10,9 +10,7 @@ import org.example.MessageSendException;
 import org.example.host.Host;
 import org.example.messaging.ack.LITechnicalAck;
 import org.example.messaging.ack.LITechnicalAckBuilder;
-import org.example.util.XmlUtilityService;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
@@ -26,23 +24,21 @@ public class UICMessageSender {
 
     private static final LIReceiveMessageService MESSAGE_SERVICE = new LIReceiveMessageService();
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
+    private static final String ACK = "ACK";
 
     private final LITechnicalAckBuilder liTechnicalAckBuilder;
-    private final XmlUtilityService xmlUtilityService;
     private final String messageLiHost;
     private final Map<Host, UICReceiveMessage> clientCache = new HashMap<>();
 
     public UICMessageSender(
             LITechnicalAckBuilder liTechnicalAckBuilder,
-            XmlUtilityService xmlUtilityService,
             @ConfigProperty(name = "messageLiHost", defaultValue = "localhost") String messageLiHost
     ) {
         this.liTechnicalAckBuilder = liTechnicalAckBuilder;
-        this.xmlUtilityService = xmlUtilityService;
         this.messageLiHost = messageLiHost;
     }
 
-    public void sendMessage(Host host, String messageIdentifier, String message) throws MessageSendException {
+    public void sendMessage(Host host, String messageIdentifier, Document message) throws MessageSendException {
         Log.debug("Sending message to host");
         UICReceiveMessage client = getOrCreateClient(host);
 
@@ -51,7 +47,7 @@ public class UICMessageSender {
             UICMessageResponse response = client.uicMessage(uicMessage, messageIdentifier, messageLiHost, false, false, false);
 
             LITechnicalAck liTechnicalAck = liTechnicalAckBuilder.unmarshal((Node) response.getReturn());
-            if (!(liTechnicalAck.getResponseStatus().equals("ACK"))) {
+            if (!(liTechnicalAck.getResponseStatus().equalsIgnoreCase(ACK))) {
                 throw new MessageSendException(MessageSendException.FailureType.MESSAGE_REJECTED);
             }
         } catch (ParserConfigurationException | IOException | SAXException e) {
@@ -77,16 +73,9 @@ public class UICMessageSender {
         return client;
     }
 
-    private UICMessage createUICMessage(String message) throws ParserConfigurationException, IOException, SAXException {
-        Document document = xmlUtilityService.parseXmlString(message);
-        Element wrapperRoot = document.createElement("wrapper");
-        Node originalRoot = document.getDocumentElement();
-        document.removeChild(originalRoot);
-        wrapperRoot.appendChild(originalRoot);
-        document.appendChild(wrapperRoot);
-
+    private UICMessage createUICMessage(Document message) throws ParserConfigurationException, IOException, SAXException {
         UICMessage uicMessage = OBJECT_FACTORY.createUICMessage();
-        uicMessage.setMessage(wrapperRoot);
+        uicMessage.setMessage(message.getFirstChild());
         return uicMessage;
     }
 }
